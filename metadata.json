@@ -1,0 +1,8 @@
+{
+  "name": "Taste Heven - Pure Honey, Achar & Murabba",
+  "description": "Taste Heven brings 100% pure Sidr honey, traditional homemade achar, and lazeez murabba with nationwide Cash on Delivery and easy WhatsApp ordering.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

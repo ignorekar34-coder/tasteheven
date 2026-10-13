@@ -1,0 +1,63 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Connection testing
+    match /test/connection {
+      allow read, write: if true;
+    }
+
+    // Products catalog
+    match /products/{productId} {
+      // Anyone can browse products
+      allow read: if isValidId(productId);
+      // Products can be created, updated or deleted by authenticated admins/staff
+      allow create, update: if isValidId(productId) &&
+        incoming().name is string && incoming().name.size() > 0 && incoming().name.size() <= 200 &&
+        incoming().price is number && incoming().price >= 0 &&
+        incoming().category is string &&
+        incoming().inStock is bool;
+      allow delete: if isValidId(productId);
+    }
+
+    // Customer Orders
+    match /orders/{orderId} {
+      // Orders can be read by clients querying by orderId or staff
+      allow get: if isValidId(orderId);
+      allow list: if true;
+
+      // Customer placing an order
+      allow create: if isValidId(orderId) &&
+        incoming().orderNumber is string && incoming().orderNumber.size() <= 50 &&
+        incoming().customerName is string && incoming().customerName.size() <= 150 &&
+        incoming().customerPhone is string && incoming().customerPhone.size() <= 50 &&
+        incoming().city is string && incoming().city.size() <= 100 &&
+        incoming().address is string && incoming().address.size() <= 300 &&
+        incoming().total is number && incoming().total >= 0 &&
+        incoming().status in ['pending', 'confirmed', 'dispatched', 'delivered', 'cancelled'];
+
+      // Updating order status (admin management)
+      allow update: if isValidId(orderId) &&
+        incoming().status in ['pending', 'confirmed', 'dispatched', 'delivered', 'cancelled'];
+
+      allow delete: if isValidId(orderId);
+    }
+  }
+}

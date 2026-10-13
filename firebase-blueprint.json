@@ -1,0 +1,100 @@
+{
+  "entities": {
+    "Order": {
+      "title": "Order",
+      "description": "Customer order details placed via website or WhatsApp",
+      "type": "object",
+      "properties": {
+        "orderNumber": {
+          "type": "string",
+          "description": "Unique human readable order number"
+        },
+        "customerName": {
+          "type": "string",
+          "description": "Customer name"
+        },
+        "customerPhone": {
+          "type": "string",
+          "description": "Customer contact number"
+        },
+        "city": {
+          "type": "string",
+          "description": "Destination city"
+        },
+        "address": {
+          "type": "string",
+          "description": "Delivery street address"
+        },
+        "subtotal": {
+          "type": "number",
+          "description": "Order subtotal in PKR"
+        },
+        "shippingFee": {
+          "type": "number",
+          "description": "Delivery fee in PKR"
+        },
+        "total": {
+          "type": "number",
+          "description": "Grand total in PKR"
+        },
+        "status": {
+          "type": "string",
+          "description": "Order fulfillment status",
+          "enum": ["pending", "confirmed", "dispatched", "delivered", "cancelled"]
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional instructions"
+        }
+      },
+      "required": ["orderNumber", "customerName", "customerPhone", "city", "address", "total", "status"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Taste Heven catalog item",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Product title"
+        },
+        "urduName": {
+          "type": "string",
+          "description": "Urdu title"
+        },
+        "category": {
+          "type": "string",
+          "description": "Category",
+          "enum": ["honey", "achar", "murabba"]
+        },
+        "price": {
+          "type": "number",
+          "description": "Price in PKR"
+        },
+        "weight": {
+          "type": "string",
+          "description": "Default weight"
+        },
+        "inStock": {
+          "type": "boolean",
+          "description": "Stock status"
+        }
+      },
+      "required": ["name", "category", "price", "inStock"]
+    }
+  },
+  "firestore": {
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Collection of customer orders"
+    },
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Collection of products in the store"
+    }
+  }
+}
