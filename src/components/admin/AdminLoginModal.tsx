@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AdminUser } from '../../types';
-import { Lock, User, Key, Eye, EyeOff, ShieldCheck, X, Sparkles } from 'lucide-react';
+import { Lock, User, Key, Eye, EyeOff, ShieldCheck, X, Sparkles, ArrowLeft } from 'lucide-react';
 import { TasteHevenLogo } from '../TasteHevenLogo';
 
 interface AdminLoginModalProps {
@@ -153,10 +153,20 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
 
           <button
             type="submit"
-            className="w-full py-3 px-4 bg-emerald-950 hover:bg-emerald-900 text-amber-200 font-semibold text-sm rounded-xl shadow-xs transition-colors cursor-pointer mt-2 flex items-center justify-center gap-2"
+            className="w-full py-3 px-4 bg-[#0A0A0A] hover:bg-[#1A1A1A] text-[#D4AF37] border border-[#D4AF37]/50 font-bold text-sm rounded-xl shadow-xs transition-colors cursor-pointer mt-2 flex items-center justify-center gap-2"
           >
-            <ShieldCheck className="w-4 h-4 text-amber-400" />
+            <ShieldCheck className="w-4 h-4 text-[#D4AF37]" />
             <span>Login to Admin Dashboard</span>
+          </button>
+
+          {/* Back to Website Button */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full py-2.5 bg-stone-100 hover:bg-stone-200 text-[#0A0A0A] font-semibold text-xs rounded-xl flex items-center justify-center gap-2 border border-stone-300 transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 text-[#0A0A0A]" />
+            <span>← واپس کسٹمر ویب سائٹ پر جائیں (Back to Store)</span>
           </button>
         </form>
       </div>

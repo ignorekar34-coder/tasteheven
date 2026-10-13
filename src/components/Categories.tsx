@@ -11,6 +11,7 @@ interface CategoriesProps {
     honey: number;
     achar: number;
     murabba: number;
+    featured?: number;
   };
 }
 
@@ -147,6 +148,17 @@ export const Categories: React.FC<CategoriesProps> = ({
               }`}
             >
               All Items ({counts.all})
+            </button>
+            <button
+              onClick={() => onSelectCategory('featured')}
+              className={`px-5 py-2.5 text-xs sm:text-sm font-bold rounded-full transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeCategory === 'featured'
+                  ? 'bg-[#0A0A0A] text-[#D4AF37] shadow-sm border border-[#D4AF37]'
+                  : 'text-[#0A0A0A] hover:text-[#D4AF37]'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <span>⭐ Featured ({counts.featured ?? 0})</span>
             </button>
             <button
               onClick={() => onSelectCategory('honey')}

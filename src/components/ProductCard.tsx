@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Product } from '../types';
-import { ShoppingBag, MessageCircle, Eye, Star, Check } from 'lucide-react';
+import { ShoppingBag, MessageCircle, Eye, Star, Check, Sparkles } from 'lucide-react';
 import { formatPKR, generateSingleProductWhatsAppUrl } from '../utils/whatsapp';
 
 interface ProductCardProps {
@@ -55,12 +55,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
         />
 
-        {/* Badge */}
-        {product.badge && (
-          <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-md border border-[#D4AF37]/40 text-[#0A0A0A] text-[11px] font-bold px-3 py-1 rounded-full shadow-2xs">
-            {product.badge}
-          </div>
-        )}
+        {/* Badges Container */}
+        <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start z-10">
+          {product.featured && (
+            <div className="bg-[#0A0A0A]/95 backdrop-blur-md border border-[#D4AF37] text-[#D4AF37] text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-[#D4AF37]" />
+              <span>Featured</span>
+            </div>
+          )}
+          {product.badge && (
+            <div className="bg-white/95 backdrop-blur-md border border-[#D4AF37]/40 text-[#0A0A0A] text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-2xs">
+              {product.badge}
+            </div>
+          )}
+        </div>
 
         {/* Quick View Floating Button */}
         <button

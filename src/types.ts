@@ -1,4 +1,4 @@
-export type ProductCategory = 'all' | 'honey' | 'achar' | 'murabba';
+export type ProductCategory = 'all' | 'honey' | 'achar' | 'murabba' | 'featured';
 
 export interface ProductWeightOption {
   weight: string;

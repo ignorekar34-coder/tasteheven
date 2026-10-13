@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Product } from '../types';
-import { X, Star, ShoppingBag, MessageCircle, ShieldCheck, Heart, Sparkles } from 'lucide-react';
+import { X, Star, ShoppingBag, MessageCircle, ShieldCheck, Heart, Sparkles, ArrowLeft } from 'lucide-react';
 import { formatPKR, generateSingleProductWhatsAppUrl } from '../utils/whatsapp';
 
 interface ProductModalProps {
@@ -45,7 +45,17 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
       {/* Modal Container */}
-      <div className="relative bg-white rounded-[32px] max-w-3xl w-full overflow-hidden shadow-2xl border border-[#D0E6D2] animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative bg-white rounded-[32px] max-w-3xl w-full overflow-hidden shadow-2xl border border-[#D4AF37]/40 animate-in fade-in zoom-in-95 duration-200">
+        {/* Top-Left Back Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 left-4 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 text-[#0A0A0A] hover:text-[#D4AF37] hover:bg-stone-50 transition-colors cursor-pointer shadow-xs border border-[#D4AF37]/50 text-xs font-semibold"
+          aria-label="Back to products"
+        >
+          <ArrowLeft className="w-3.5 h-3.5 text-[#D4AF37]" />
+          <span>← واپس جائیں (Back)</span>
+        </button>
+
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -64,11 +74,20 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               referrerPolicy="no-referrer"
               className="w-full h-full object-cover object-center"
             />
-            {product.badge && (
-              <span className="absolute top-4 left-4 bg-white/95 text-[#0A0A0A] text-xs font-bold px-3 py-1 rounded-full border border-[#D4AF37]/50 shadow-xs">
-                {product.badge}
-              </span>
-            )}
+            {/* Badges */}
+            <div className="absolute top-14 left-4 flex flex-col gap-1.5 items-start">
+              {product.featured && (
+                <span className="bg-[#0A0A0A]/95 text-[#D4AF37] text-xs font-bold px-3 py-1 rounded-full border border-[#D4AF37] shadow-xs flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-[#D4AF37]" />
+                  Featured
+                </span>
+              )}
+              {product.badge && (
+                <span className="bg-white/95 text-[#0A0A0A] text-xs font-bold px-3 py-1 rounded-full border border-[#D4AF37]/50 shadow-xs">
+                  {product.badge}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Details Column */}
@@ -227,6 +246,16 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                   <span>Order on WhatsApp</span>
                 </a>
               </div>
+
+              {/* Bottom Return to Store Button */}
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full py-2.5 bg-stone-100 hover:bg-stone-200 text-[#0A0A0A] font-semibold text-xs rounded-full flex items-center justify-center gap-2 border border-stone-300 transition-colors cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-[#0A0A0A]" />
+                <span>← واپس پروڈکٹس پر جائیں (Back to Products)</span>
+              </button>
 
               <div className="flex items-center justify-center gap-2 text-[11px] text-stone-500 pt-1 font-medium">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#D4AF37]" />

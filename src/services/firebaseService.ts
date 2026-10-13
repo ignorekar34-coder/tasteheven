@@ -30,17 +30,32 @@ export function subscribeToOrders(
       q,
       (snapshot) => {
         if (snapshot.empty) {
-          // If Firestore collection is empty, initialize with default initial orders
-          seedInitialOrders();
+          onUpdate([]);
           return;
         }
-        const orders: OrderRecord[] = snapshot.docs.map((d) => ({
-          ...(d.data() as OrderRecord),
-          id: d.id,
-        }));
+
+        // Identify any legacy demo orders (e.g. Dr. Ayesha Siddiqua, Usman Ghani) and purge them from Firestore
+        const validOrders: OrderRecord[] = [];
+        snapshot.docs.forEach((d) => {
+          const data = d.data() as OrderRecord;
+          const isDemo =
+            d.id.startsWith('ord-10') ||
+            (data.customerName && /ayesha|siddiqu|usman|salman|khurram/i.test(data.customerName));
+
+          if (isDemo) {
+            // Delete legacy demo order from Firestore in background
+            deleteDoc(d.ref).catch(() => {});
+          } else {
+            validOrders.push({
+              ...data,
+              id: d.id,
+            });
+          }
+        });
+
         // Sort newest first
-        orders.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-        onUpdate(orders);
+        validOrders.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+        onUpdate(validOrders);
       },
       (error) => {
         if (onError) onError(error);
@@ -54,19 +69,6 @@ export function subscribeToOrders(
 }
 
 /**
- * Seed initial sample orders to Firestore once
- */
-async function seedInitialOrders() {
-  try {
-    for (const order of INITIAL_ORDERS) {
-      await setDoc(doc(db, ORDERS_COLLECTION, order.id), order);
-    }
-  } catch (err) {
-    console.warn('Seeding initial orders skipped:', err);
-  }
-}
-
-/**
  * Save new order to Firestore
  */
 export async function saveOrderToFirestore(order: OrderRecord): Promise<void> {
@@ -75,6 +77,31 @@ export async function saveOrderToFirestore(order: OrderRecord): Promise<void> {
     await setDoc(docRef, order);
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `${ORDERS_COLLECTION}/${order.id}`);
+  }
+}
+
+/**
+ * Delete a specific order from Firestore
+ */
+export async function deleteOrderFromFirestore(orderId: string): Promise<void> {
+  const docRef = doc(db, ORDERS_COLLECTION, orderId);
+  try {
+    await deleteDoc(docRef);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `${ORDERS_COLLECTION}/${orderId}`);
+  }
+}
+
+/**
+ * Clear all orders from Firestore (for Store Owners)
+ */
+export async function clearAllOrdersFromFirestore(): Promise<void> {
+  try {
+    const snap = await getDocs(collection(db, ORDERS_COLLECTION));
+    const deletePromises = snap.docs.map((d) => deleteDoc(d.ref));
+    await Promise.all(deletePromises);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, ORDERS_COLLECTION);
   }
 }
 
@@ -92,6 +119,7 @@ export async function updateOrderStatusInFirestore(
     handleFirestoreError(error, OperationType.UPDATE, `${ORDERS_COLLECTION}/${orderId}`);
   }
 }
+
 
 /**
  * Real-time listener for Products

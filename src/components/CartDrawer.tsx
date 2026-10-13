@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CartItem, OrderRecord } from '../types';
-import { X, Trash2, ShoppingBag, MessageCircle, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
+import { X, Trash2, ShoppingBag, MessageCircle, ArrowRight, ShieldCheck, Sparkles, ArrowLeft } from 'lucide-react';
 import { formatPKR, generateCartWhatsAppUrl, OrderCustomerInfo } from '../utils/whatsapp';
 
 interface CartDrawerProps {
@@ -68,9 +68,18 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           {/* Header */}
           <div className="p-4 sm:p-5 border-b border-[#0A0A0A]/10 flex items-center justify-between bg-stone-50">
             <div className="flex items-center gap-2">
+              <button
+                onClick={onClose}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-stone-200/80 hover:bg-stone-300 text-[#0A0A0A] text-xs font-semibold transition-colors cursor-pointer mr-1"
+                title="Back to Store"
+                aria-label="Back to Store"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-[#0A0A0A]" />
+                <span>واپس (Back)</span>
+              </button>
               <ShoppingBag className="w-5 h-5 text-[#0A0A0A]" />
-              <h2 className="font-serif text-xl font-bold text-[#0A0A0A]">
-                Your Shopping Cart
+              <h2 className="font-serif text-lg sm:text-xl font-bold text-[#0A0A0A]">
+                Your Cart
               </h2>
               <span className="text-xs bg-[#D4AF37] text-[#0A0A0A] font-bold px-2.5 py-0.5 rounded-full border border-[#AA8010] tabular-nums">
                 {items.length} {items.length === 1 ? 'item' : 'items'}
@@ -126,9 +135,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 </p>
                 <button
                   onClick={onClose}
-                  className="px-5 py-2.5 bg-emerald-900 hover:bg-emerald-800 text-amber-100 text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
+                  className="flex items-center gap-2 px-6 py-3 bg-[#0A0A0A] hover:bg-[#1A1A1A] text-[#D4AF37] border border-[#D4AF37] text-xs font-bold rounded-full shadow-md transition-all cursor-pointer"
                 >
-                  Explore Pure Pantry
+                  <ArrowLeft className="w-4 h-4 text-[#D4AF37]" />
+                  <span>← واپس شاپنگ پر جائیں (Continue Shopping)</span>
                 </button>
               </div>
             ) : (
@@ -353,6 +363,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <span>Complete Order on WhatsApp</span>
                 <ArrowRight className="w-4 h-4 ml-1" />
               </a>
+
+              {/* Continue Shopping / Back to Shop Button */}
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full py-2.5 bg-stone-100 hover:bg-stone-200 text-[#0A0A0A] font-semibold text-xs rounded-full flex items-center justify-center gap-1.5 border border-stone-300 transition-colors cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-[#0A0A0A]" />
+                <span>← شاپنگ جاری رکھیں (Continue Shopping)</span>
+              </button>
 
               <div className="flex items-center justify-between text-[11px] text-stone-500 pt-1">
                 <div className="flex items-center gap-1">

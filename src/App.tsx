@@ -26,6 +26,8 @@ import { testConnection } from './firebase';
 import {
   subscribeToOrders,
   saveOrderToFirestore,
+  deleteOrderFromFirestore,
+  clearAllOrdersFromFirestore,
   updateOrderStatusInFirestore,
   subscribeToProducts,
   saveProductToFirestore,
@@ -44,13 +46,25 @@ export default function App() {
     }
   });
 
-  // Load orders with Firestore sync + localStorage persistence
+  // Load orders with Firestore sync + localStorage persistence (purging any legacy demo orders)
   const [orders, setOrders] = useState<OrderRecord[]>(() => {
     try {
       const saved = localStorage.getItem('taste_heven_orders');
-      return saved ? JSON.parse(saved) : INITIAL_ORDERS;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const cleaned = parsed.filter(
+            (o: OrderRecord) =>
+              !o.id.startsWith('ord-10') &&
+              !/ayesha|siddiqu|usman|salman|khurram/i.test(o.customerName || '')
+          );
+          localStorage.setItem('taste_heven_orders', JSON.stringify(cleaned));
+          return cleaned;
+        }
+      }
+      return [];
     } catch {
-      return INITIAL_ORDERS;
+      return [];
     }
   });
 
@@ -140,10 +154,9 @@ export default function App() {
     });
 
     const unsubscribeOrders = subscribeToOrders((cloudOrders) => {
-      if (cloudOrders && cloudOrders.length > 0) {
-        setOrders(cloudOrders);
-      }
+      setOrders(cloudOrders || []);
     });
+
 
     const unsubscribeProducts = subscribeToProducts((cloudProducts) => {
       if (cloudProducts && cloudProducts.length > 0) {
@@ -402,6 +415,37 @@ export default function App() {
     setTimeout(() => setToast((t) => ({ ...t, visible: false })), 2500);
   };
 
+  // Delete individual order -> sync to Firestore & localStorage
+  const handleDeleteOrder = (orderId: string) => {
+    setOrders((prev) => prev.filter((o) => o.id !== orderId));
+    deleteOrderFromFirestore(orderId).catch((err) =>
+      console.error('Firestore deleteOrder error:', err)
+    );
+    setToast({
+      visible: true,
+      message: 'Order Removed',
+      subMessage: 'آرڈر کامیابی سے ہٹا دیا گیا ہے۔',
+    });
+    setTimeout(() => setToast((t) => ({ ...t, visible: false })), 2500);
+  };
+
+  // Clear all orders & history -> purge Firestore & localStorage
+  const handleClearAllOrders = async () => {
+    setOrders([]);
+    try {
+      localStorage.removeItem('taste_heven_orders');
+    } catch (e) {}
+    await clearAllOrdersFromFirestore().catch((err) =>
+      console.error('Firestore clearAllOrders error:', err)
+    );
+    setToast({
+      visible: true,
+      message: 'All Orders Cleared',
+      subMessage: 'تمام آرڈرز اور ہسٹری مکمل طور پر صاف کر دی گئی ہے۔',
+    });
+    setTimeout(() => setToast((t) => ({ ...t, visible: false })), 2500);
+  };
+
   const scrollToProducts = () => {
     const el = document.getElementById('products');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -421,6 +465,8 @@ export default function App() {
           onDeleteProduct={handleDeleteProduct}
           orders={orders}
           onUpdateOrderStatus={handleUpdateOrderStatus}
+          onDeleteOrder={handleDeleteOrder}
+          onClearAllOrders={handleClearAllOrders}
           adminUsers={adminUsers}
           onUpdateAdminUsers={setAdminUsers}
         />
@@ -433,6 +479,7 @@ export default function App() {
       </>
     );
   }
+
 
   // Render Customer Storefront
   return (
