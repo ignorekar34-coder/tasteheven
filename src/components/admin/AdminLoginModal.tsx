@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AdminUser } from '../../types';
 import { Lock, User, Key, Eye, EyeOff, ShieldCheck, X, Sparkles } from 'lucide-react';
+import { TasteHevenLogo } from '../TasteHevenLogo';
 
 interface AdminLoginModalProps {
   isOpen: boolean;
@@ -28,7 +29,8 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
 
     const matched = adminUsers.find(
       (u) =>
-        u.username.toLowerCase().trim() === username.toLowerCase().trim() &&
+        (u.username.toLowerCase().trim() === username.toLowerCase().trim() ||
+          (username.toLowerCase().trim() === 'admin' && u.username === 'ahmad')) &&
         u.password === password
     );
 
@@ -60,39 +62,37 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
 
         {/* Modal Header */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-emerald-950 text-amber-400 flex items-center justify-center shadow-xs">
-            <Lock className="w-6 h-6" />
-          </div>
+          <TasteHevenLogo variant="badge" size={48} />
           <div>
             <h2 className="font-serif text-xl font-bold text-stone-900">
               Taste Heven Admin Portal
             </h2>
             <p className="text-xs text-stone-500">
-              Staff and Store Management Access
+              Owners Management Access (احمد وسیم & فرمان علی)
             </p>
           </div>
         </div>
 
-        {/* Quick Credentials Info Box (for the 4 users) */}
+        {/* Quick Credentials Info Box (for the 2 Owners) */}
         <div className="mb-6 p-3.5 bg-amber-50/80 rounded-xl border border-amber-200/80">
           <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 mb-2">
             <Sparkles className="w-3.5 h-3.5 text-amber-700" />
-            <span>4 Authorized Admin Accounts:</span>
+            <span>Store Owners (آنرز):</span>
           </div>
           <p className="text-[11px] text-amber-800 mb-2.5">
-            Click any account to auto-fill credentials:
+            Click either owner to auto-fill credentials:
           </p>
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-2 gap-2">
             {adminUsers.map((u) => (
               <button
                 key={u.id}
                 type="button"
                 onClick={() => handleQuickFill(u)}
-                className="text-left p-2 bg-white rounded-lg border border-amber-200/60 hover:border-amber-400 hover:bg-amber-100/40 transition-colors text-[11px] cursor-pointer"
+                className="text-left p-2.5 bg-white rounded-xl border border-amber-200/80 hover:border-amber-500 hover:bg-amber-100/50 transition-all text-[11px] cursor-pointer shadow-2xs"
               >
                 <div className="font-bold text-stone-900 truncate">{u.name}</div>
-                <div className="text-stone-500 text-[10px] truncate">{u.role}</div>
-                <div className="text-amber-800 font-mono text-[10px] mt-0.5">
+                <div className="text-emerald-800 font-semibold text-[10px]">{u.role}</div>
+                <div className="text-amber-800 font-mono text-[10px] mt-1 pt-1 border-t border-amber-100">
                   user: <strong className="font-semibold">{u.username}</strong>
                 </div>
               </button>

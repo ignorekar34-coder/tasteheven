@@ -25,7 +25,7 @@ export function generateCartWhatsAppUrl(
   const grandTotal = subtotal + shippingFee;
   const isFreeDelivery = shippingFee === 0;
 
-  let msg = `🌿 *${STORE_NAME} - New Order Request* 🌿\n\n`;
+  let msg = `🌶️🍯 *${STORE_NAME} - New Order Request* ✨\n\n`;
   msg += `Assalam-o-Alaikum! I want to order the following items from ${STORE_NAME}:\n\n`;
   msg += `*📋 Order Items:*\n`;
 
@@ -68,7 +68,7 @@ export function generateSingleProductWhatsAppUrl(
   quantity = 1
 ): string {
   const total = price * quantity;
-  let msg = `🌿 *${STORE_NAME} - Quick Order* 🌿\n\n`;
+  let msg = `🌶️🍯 *${STORE_NAME} - Quick Order* ✨\n\n`;
   msg += `Assalam-o-Alaikum! I want to order this product directly:\n\n`;
   msg += `*Product:* ${product.name} (${product.urduName})\n`;
   msg += `*Selected Size:* ${weight}\n`;

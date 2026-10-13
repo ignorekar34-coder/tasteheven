@@ -48,7 +48,7 @@ export interface AdminUser {
   id: string;
   username: string;
   name: string;
-  role: 'Super Admin' | 'Store Manager' | 'Order Dispatcher' | 'Inventory Manager';
+  role: 'Owner' | 'Co-Owner' | 'Super Admin' | 'Store Manager' | 'Order Dispatcher' | 'Inventory Manager';
   password: string;
   phone?: string;
   avatarColor: string;

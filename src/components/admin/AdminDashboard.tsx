@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AdminUser, Product, OrderRecord, OrderStatus, ProductCategory } from '../../types';
 import { formatPKR } from '../../utils/whatsapp';
+import { TasteHevenLogo } from '../TasteHevenLogo';
 import {
   LayoutDashboard,
   Package,
@@ -199,16 +200,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   return (
     <div className="min-h-screen bg-stone-100 text-stone-800 flex flex-col text-left">
       {/* Top Navbar */}
-      <header className="bg-emerald-950 text-white border-b border-emerald-900 sticky top-0 z-30 shadow-md">
+      <header className="bg-[#0A0A0A] text-white border-b border-[#D4AF37]/30 sticky top-0 z-30 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-amber-500 text-emerald-950 font-serif font-bold flex items-center justify-center text-sm shadow-xs">
-              TH
-            </div>
+            <TasteHevenLogo variant="badge" size={38} />
             <div>
-              <h1 className="font-serif text-lg font-bold text-amber-100 flex items-center gap-2">
+              <h1 className="font-serif text-lg font-bold text-white flex items-center gap-2">
                 <span>Taste Heven Admin</span>
-                <span className="text-[10px] font-mono uppercase bg-emerald-900 text-amber-300 border border-emerald-800 px-2 py-0.5 rounded">
+                <span className="text-[10px] font-mono uppercase bg-white/10 text-[#D4AF37] border border-[#D4AF37]/30 px-2 py-0.5 rounded">
                   Internal Portal
                 </span>
               </h1>
@@ -217,17 +216,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           <div className="flex items-center gap-3">
             {/* Active User Badge */}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-900/80 border border-emerald-800 text-xs">
-              <div className="w-2 h-2 rounded-full bg-emerald-400" />
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 border border-[#D4AF37]/30 text-xs">
+              <div className="w-2 h-2 rounded-full bg-[#D4AF37]" />
               <div>
                 <span className="font-semibold text-white">{currentUser.name}</span>
-                <span className="text-amber-300 text-[10px] ml-1">({currentUser.role})</span>
+                <span className="text-[#D4AF37] text-[10px] ml-1">({currentUser.role})</span>
               </div>
             </div>
 
             <button
               onClick={onReturnToStore}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-semibold rounded-lg transition-colors cursor-pointer border border-stone-700"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Customer Store</span>
@@ -245,13 +244,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
 
         {/* Tab Navigation Bar */}
-        <div className="bg-emerald-900/90 border-t border-emerald-900/80 px-4 sm:px-8 flex space-x-1 sm:space-x-4 overflow-x-auto">
+        <div className="bg-[#141414] border-t border-white/10 px-4 sm:px-8 flex space-x-1 sm:space-x-4 overflow-x-auto">
           <button
             onClick={() => setActiveTab('overview')}
             className={`flex items-center gap-2 py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === 'overview'
-                ? 'border-amber-400 text-amber-300 bg-emerald-950/40'
-                : 'border-transparent text-emerald-200 hover:text-white'
+                ? 'border-[#D4AF37] text-[#D4AF37] bg-white/5'
+                : 'border-transparent text-stone-400 hover:text-white'
             }`}
           >
             <LayoutDashboard className="w-4 h-4" />
@@ -262,14 +261,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             onClick={() => setActiveTab('orders')}
             className={`flex items-center gap-2 py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === 'orders'
-                ? 'border-amber-400 text-amber-300 bg-emerald-950/40'
-                : 'border-transparent text-emerald-200 hover:text-white'
+                ? 'border-[#D4AF37] text-[#D4AF37] bg-white/5'
+                : 'border-transparent text-stone-400 hover:text-white'
             }`}
           >
             <ShoppingBag className="w-4 h-4" />
             <span>Orders & Dispatch</span>
             {pendingOrdersCount > 0 && (
-              <span className="bg-amber-500 text-emerald-950 text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+              <span className="bg-[#D4AF37] text-[#0A0A0A] text-[10px] font-bold px-1.5 py-0.2 rounded-full">
                 {pendingOrdersCount}
               </span>
             )}
@@ -279,8 +278,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             onClick={() => setActiveTab('products')}
             className={`flex items-center gap-2 py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === 'products'
-                ? 'border-amber-400 text-amber-300 bg-emerald-950/40'
-                : 'border-transparent text-emerald-200 hover:text-white'
+                ? 'border-[#D4AF37] text-[#D4AF37] bg-white/5'
+                : 'border-transparent text-stone-400 hover:text-white'
             }`}
           >
             <Package className="w-4 h-4" />
@@ -291,12 +290,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             onClick={() => setActiveTab('team')}
             className={`flex items-center gap-2 py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === 'team'
-                ? 'border-amber-400 text-amber-300 bg-emerald-950/40'
-                : 'border-transparent text-emerald-200 hover:text-white'
+                ? 'border-[#D4AF37] text-[#D4AF37] bg-white/5'
+                : 'border-transparent text-stone-400 hover:text-white'
             }`}
           >
             <Users className="w-4 h-4" />
-            <span>4 Admin Accounts ({adminUsers.length})</span>
+            <span>Store Owners ({adminUsers.length})</span>
           </button>
         </div>
       </header>
@@ -350,14 +349,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-2xs">
                 <div className="flex items-center justify-between text-stone-500 text-xs mb-2 font-medium">
-                  <span>Authorized Staff</span>
+                  <span>Store Owners</span>
                   <Users className="w-4 h-4 text-blue-700" />
                 </div>
                 <div className="font-serif text-2xl font-bold text-stone-900 tabular-nums">
-                  4 Admins
+                  2 Owners
                 </div>
                 <div className="text-[11px] text-emerald-700 mt-1">
-                  Owner, Manager, Dispatcher, Stock
+                  Ahmad Waseem & Farman Ali
                 </div>
               </div>
             </div>
@@ -720,18 +719,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         )}
 
-        {/* TAB 4: 4 ADMIN ACCOUNTS */}
+        {/* TAB 4: STORE OWNERS */}
         {activeTab === 'team' && (
           <div className="space-y-6">
             <div className="bg-amber-50/80 p-5 rounded-2xl border border-amber-200/80">
               <div className="flex items-center gap-2 text-amber-900 font-bold text-sm mb-1">
                 <Shield className="w-4 h-4 text-amber-700" />
-                <span>Taste Heven Management Access: 4 Authorized Staff</span>
+                <span>Taste Heven Store Owners: احمد وسیم & فرمان علی</span>
               </div>
               <p className="text-xs text-amber-800 leading-relaxed">
-                As requested, 4 distinct administrative accounts are configured to run Taste Heven.
-                Each member can log in with their respective username and password to process WhatsApp orders,
-                update honey/achar/murabba stock, and modify prices.
+                Taste Heven کے دونوں آنرز (Ahmad Waseem اور Farman Ali) کے ایڈمن اکاؤنٹس یہاں محفوظ ہیں۔ دونوں حضرات پروڈکٹ کی قیمتیں، شہد، اچار اور مربے کا سٹاک، اور واٹس ایپ آرڈرز کا مکمل انتظام سنبھال سکتے ہیں۔
               </p>
             </div>
 

@@ -66,19 +66,19 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
         <div className="w-screen max-w-md bg-white shadow-2xl flex flex-col border-l border-stone-200">
           {/* Header */}
-          <div className="p-4 sm:p-5 border-b border-stone-200 flex items-center justify-between bg-stone-50/50">
+          <div className="p-4 sm:p-5 border-b border-[#0A0A0A]/10 flex items-center justify-between bg-stone-50">
             <div className="flex items-center gap-2">
-              <ShoppingBag className="w-5 h-5 text-emerald-900" />
-              <h2 className="font-serif text-lg font-bold text-stone-900">
+              <ShoppingBag className="w-5 h-5 text-[#0A0A0A]" />
+              <h2 className="font-serif text-xl font-bold text-[#0A0A0A]">
                 Your Shopping Cart
               </h2>
-              <span className="text-xs bg-amber-100 text-amber-800 font-semibold px-2 py-0.5 rounded-full tabular-nums">
+              <span className="text-xs bg-[#D4AF37] text-[#0A0A0A] font-bold px-2.5 py-0.5 rounded-full border border-[#AA8010] tabular-nums">
                 {items.length} {items.length === 1 ? 'item' : 'items'}
               </span>
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-stone-500 hover:text-stone-900 hover:bg-stone-200/60 transition-colors cursor-pointer"
+              className="p-1.5 rounded-full text-stone-500 hover:text-black hover:bg-stone-200 transition-colors cursor-pointer"
               aria-label="Close cart"
             >
               <X className="w-5 h-5" />
@@ -87,24 +87,24 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
           {/* Free Shipping Progress Indicator */}
           {items.length > 0 && (
-            <div className="bg-amber-50/80 border-b border-amber-200/60 p-3 sm:px-5">
-              <div className="flex items-center justify-between text-xs font-semibold text-amber-900 mb-1.5">
+            <div className="bg-stone-100 border-b border-stone-200 p-3 sm:px-5">
+              <div className="flex items-center justify-between text-xs font-semibold text-[#0A0A0A] mb-1.5">
                 <span className="flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-700" />
+                  <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
                   {isFreeShipping ? (
-                    <span className="text-emerald-800 font-bold">
-                      🎉 Congratulations! You have unlocked FREE Delivery!
+                    <span className="text-[#0A0A0A] font-bold">
+                      🎉 You have unlocked FREE Nationwide Delivery!
                     </span>
                   ) : (
                     <span>
-                      Add <strong className="tabular-nums">{formatPKR(amountToFreeShipping)}</strong> more for FREE Delivery!
+                      Add <strong className="tabular-nums text-[#D4AF37]">{formatPKR(amountToFreeShipping)}</strong> more for FREE Delivery!
                     </span>
                   )}
                 </span>
               </div>
-              <div className="w-full bg-amber-200/70 h-1.5 rounded-full overflow-hidden">
+              <div className="w-full bg-stone-200 h-1.5 rounded-full overflow-hidden border border-stone-300">
                 <div
-                  className="bg-emerald-700 h-full rounded-full transition-all duration-300"
+                  className="bg-[#0A0A0A] h-full rounded-full transition-all duration-300"
                   style={{ width: `${freeShippingProgress}%` }}
                 />
               </div>
@@ -287,12 +287,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
           {/* Footer with Calculations and WhatsApp Checkout CTA */}
           {items.length > 0 && (
-            <div className="p-4 sm:p-5 border-t border-stone-200 bg-stone-50/70 space-y-3">
+            <div className="p-4 sm:p-5 border-t border-[#0A0A0A]/10 bg-stone-50 space-y-3">
               {/* Financial Breakdown */}
               <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between text-stone-600">
                   <span>Subtotal:</span>
-                  <span className="font-semibold tabular-nums text-stone-900">
+                  <span className="font-semibold tabular-nums text-[#0A0A0A]">
                     {formatPKR(subtotal)}
                   </span>
                 </div>
@@ -300,29 +300,29 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   <span>Delivery Charges:</span>
                   <span className="font-semibold tabular-nums">
                     {isFreeShipping ? (
-                      <span className="text-emerald-700 font-bold">FREE</span>
+                      <span className="text-[#0A0A0A] font-bold">FREE</span>
                     ) : (
                       formatPKR(shippingFee)
                     )}
                   </span>
                 </div>
-                <div className="flex justify-between text-base font-bold text-stone-900 pt-2 border-t border-stone-200">
+                <div className="flex justify-between text-base font-bold text-[#0A0A0A] pt-2 border-t border-stone-200">
                   <span>Grand Total (COD):</span>
-                  <span className="font-serif text-lg text-emerald-950 tabular-nums">
+                  <span className="font-serif text-xl text-[#0A0A0A] tabular-nums font-bold">
                     {formatPKR(grandTotal)}
                   </span>
                 </div>
               </div>
 
               {/* EasyPaisa Payment Note */}
-              <div className="bg-emerald-50 border border-emerald-200/80 rounded-lg p-2.5 text-[11px] text-emerald-950 flex items-center justify-between">
+              <div className="bg-white border border-[#D4AF37]/40 rounded-2xl p-2.5 text-[11px] text-[#0A0A0A] flex items-center justify-between">
                 <span>
                   <strong>EasyPaisa:</strong> 0324-8314001
                 </span>
-                <span className="text-emerald-700 font-medium">Or Cash on Delivery</span>
+                <span className="text-stone-500 font-semibold">Or Cash on Delivery</span>
               </div>
 
-              {/* Order via WhatsApp Action Button */}
+              {/* Order via WhatsApp Action Button (Luxury Gold & Black) */}
               <a
                 href={whatsAppCheckoutUrl}
                 target="_blank"
@@ -347,21 +347,21 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     onOrderPlaced(newOrder);
                   }
                 }}
-                className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-[#25D366] hover:bg-[#20bd5a] text-white text-sm font-semibold rounded-xl shadow-xs transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-[#D4AF37] hover:bg-[#F9E498] text-[#0A0A0A] text-sm font-bold rounded-full shadow-md transition-all border border-[#AA8010]"
               >
-                <MessageCircle className="w-5 h-5 fill-white" />
+                <MessageCircle className="w-5 h-5 fill-[#0A0A0A] text-[#0A0A0A]" />
                 <span>Complete Order on WhatsApp</span>
                 <ArrowRight className="w-4 h-4 ml-1" />
               </a>
 
               <div className="flex items-center justify-between text-[11px] text-stone-500 pt-1">
                 <div className="flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#0A0A0A]" />
                   <span>Cash on Delivery (COD)</span>
                 </div>
                 <button
                   onClick={onClearCart}
-                  className="text-stone-400 hover:text-stone-700 underline cursor-pointer"
+                  className="text-stone-400 hover:text-black underline cursor-pointer"
                 >
                   Clear Cart
                 </button>

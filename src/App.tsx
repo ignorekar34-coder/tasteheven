@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
+import Lenis from 'lenis';
 import { Product, ProductCategory, CartItem, AdminUser, OrderRecord, OrderStatus } from './types';
 import { PRODUCTS } from './data/products';
 import { INITIAL_ADMIN_USERS, INITIAL_ORDERS } from './data/adminUsers';
@@ -53,10 +54,10 @@ export default function App() {
     }
   });
 
-  // Load 4 Admin Users with localStorage persistence
+  // Load Store Owners with localStorage persistence
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>(() => {
     try {
-      const saved = localStorage.getItem('taste_heven_admin_users');
+      const saved = localStorage.getItem('taste_heven_owners_v2');
       return saved ? JSON.parse(saved) : INITIAL_ADMIN_USERS;
     } catch {
       return INITIAL_ADMIN_USERS;
@@ -67,7 +68,13 @@ export default function App() {
   const [currentAdmin, setCurrentAdmin] = useState<AdminUser | null>(() => {
     try {
       const saved = localStorage.getItem('taste_heven_current_admin');
-      return saved ? JSON.parse(saved) : null;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.username === 'ahmad' || parsed.username === 'farman') {
+          return parsed;
+        }
+      }
+      return null;
     } catch {
       return null;
     }
@@ -102,6 +109,29 @@ export default function App() {
     visible: false,
     message: '',
   });
+
+  // Initialize Lenis smooth scroll for 60fps Sweetgreen-style experience
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      touchMultiplier: 2,
+    });
+
+    let rafId: number;
+    function raf(time: number) {
+      lenis.raf(time);
+      rafId = requestAnimationFrame(raf);
+    }
+
+    rafId = requestAnimationFrame(raf);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      lenis.destroy();
+    };
+  }, []);
 
   // Test Firebase connection & subscribe to real-time updates
   useEffect(() => {
@@ -148,7 +178,7 @@ export default function App() {
   // Persist adminUsers to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem('taste_heven_admin_users', JSON.stringify(adminUsers));
+      localStorage.setItem('taste_heven_owners_v2', JSON.stringify(adminUsers));
     } catch (e) {
       console.error(e);
     }
@@ -460,13 +490,13 @@ export default function App() {
         />
 
         {/* 4. Featured Products Section */}
-        <section id="products" className="py-16 bg-white border-b border-stone-200">
+        <section id="products" className="py-16 bg-white border-b border-[#0A0A0A]/10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Section Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10 pb-6 border-b border-stone-200">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10 pb-6 border-b border-stone-100">
               <div className="text-left">
-                <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full mb-2">
-                  <Sparkles className="w-3 h-3 text-emerald-600" />
+                <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#0A0A0A] bg-stone-50 border border-[#D4AF37]/40 px-3.5 py-1 rounded-full mb-2 shadow-2xs">
+                  <Sparkles className="w-3 h-3 text-[#D4AF37]" />
                   <span>
                     {activeCategory === 'all'
                       ? 'Our Complete Pantry'
@@ -477,10 +507,10 @@ export default function App() {
                       : 'Lazeez Murabbay (مربہ)'}
                   </span>
                 </div>
-                <h2 className="font-serif text-3xl font-bold text-stone-900 tracking-tight">
+                <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#0A0A0A] tracking-tight">
                   Featured Products & Handcrafted Jars
                 </h2>
-                <p className="text-xs sm:text-sm text-stone-500 mt-1">
+                <p className="text-xs sm:text-sm text-stone-500 mt-1 font-medium">
                   Selected weight options in Pakistani Rupees (PKR) with instant Add to Cart and WhatsApp Order.
                 </p>
               </div>
@@ -493,7 +523,7 @@ export default function App() {
                       setActiveCategory('all');
                       setSearchQuery('');
                     }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/80 rounded-lg transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-[#0A0A0A] hover:text-[#D4AF37] bg-stone-100 hover:bg-stone-200 border border-[#D4AF37]/30 rounded-full transition-colors cursor-pointer"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     <span>Reset Filters</span>
@@ -505,10 +535,11 @@ export default function App() {
             {/* Products Grid */}
             {filteredProducts.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                {filteredProducts.map((product) => (
+                {filteredProducts.map((product, index) => (
                   <ProductCard
                     key={product.id}
                     product={product}
+                    index={index}
                     onAddToCart={(prod, weight, price) =>
                       handleAddToCart(prod, weight, price, 1)
                     }
@@ -517,9 +548,9 @@ export default function App() {
                 ))}
               </div>
             ) : (
-              <div className="py-16 text-center bg-stone-50 rounded-2xl border border-stone-200">
+              <div className="py-16 text-center bg-stone-50 rounded-3xl border border-[#0A0A0A]/10 p-8">
                 <Search className="w-10 h-10 text-stone-400 mx-auto mb-3" />
-                <h3 className="font-serif text-xl font-bold text-stone-800 mb-1">
+                <h3 className="font-serif text-xl font-bold text-[#0A0A0A] mb-1">
                   No matching pantry items found
                 </h3>
                 <p className="text-xs text-stone-500 max-w-sm mx-auto mb-4">
@@ -530,7 +561,7 @@ export default function App() {
                     setSearchQuery('');
                     setActiveCategory('all');
                   }}
-                  className="px-4 py-2 bg-emerald-900 text-amber-100 text-xs font-semibold rounded-lg hover:bg-emerald-800 transition-colors cursor-pointer"
+                  className="px-5 py-2.5 bg-[#0A0A0A] text-[#D4AF37] border border-[#D4AF37]/50 text-xs font-bold rounded-full hover:bg-[#1A1A1A] transition-colors cursor-pointer"
                 >
                   View All Products
                 </button>

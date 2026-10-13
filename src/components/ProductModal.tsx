@@ -43,13 +43,13 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
       {/* Modal Container */}
-      <div className="relative bg-white rounded-2xl max-w-3xl w-full overflow-hidden shadow-2xl border border-stone-200 animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative bg-white rounded-[32px] max-w-3xl w-full overflow-hidden shadow-2xl border border-[#D0E6D2] animate-in fade-in zoom-in-95 duration-200">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/90 text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition-colors cursor-pointer shadow-xs"
+          className="absolute top-4 right-4 z-10 p-2.5 rounded-full bg-white/95 text-[#0A0A0A] hover:text-[#D4AF37] hover:bg-stone-100 transition-colors cursor-pointer shadow-xs border border-stone-200"
           aria-label="Close modal"
         >
           <X className="w-5 h-5" />
@@ -57,7 +57,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-2">
           {/* Product Image Column */}
-          <div className="relative bg-stone-50 min-h-[300px] md:min-h-full">
+          <div className="relative bg-stone-100 min-h-[300px] md:min-h-full">
             <img
               src={product.image}
               alt={product.name}
@@ -65,7 +65,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               className="w-full h-full object-cover object-center"
             />
             {product.badge && (
-              <span className="absolute top-4 left-4 bg-emerald-900 text-amber-100 text-xs font-semibold px-3 py-1 rounded-md shadow-xs">
+              <span className="absolute top-4 left-4 bg-white/95 text-[#0A0A0A] text-xs font-bold px-3 py-1 rounded-full border border-[#D4AF37]/50 shadow-xs">
                 {product.badge}
               </span>
             )}
@@ -76,31 +76,31 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             <div>
               {/* Category & Rating */}
               <div className="flex items-center justify-between text-xs text-stone-500 mb-2">
-                <span className="uppercase tracking-wider font-semibold text-amber-700">
+                <span className="uppercase tracking-wider font-bold text-[#0A0A0A]">
                   {product.category === 'honey'
                     ? 'Pure Honey (شہد)'
                     : product.category === 'achar'
                     ? 'Traditional Achar (اچار)'
                     : 'Lazeez Murabba (مربہ)'}
                 </span>
-                <div className="flex items-center gap-1 text-stone-700 font-semibold">
-                  <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                  <span className="tabular-nums">{product.rating}</span>
-                  <span className="text-stone-400">({product.reviewCount} reviews)</span>
+                <div className="flex items-center gap-1 text-[#0A0A0A] font-semibold bg-stone-50 px-2.5 py-0.5 rounded-full border border-[#D4AF37]/30">
+                  <Star className="w-3.5 h-3.5 fill-[#D4AF37] text-[#D4AF37]" />
+                  <span className="tabular-nums font-bold">{product.rating}</span>
+                  <span className="text-stone-400">({product.reviewCount})</span>
                 </div>
               </div>
 
               {/* Title & Urdu Name */}
-              <h2 className="font-serif text-2xl font-bold text-stone-900 leading-snug">
+              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#0A0A0A] leading-snug">
                 {product.name}
               </h2>
-              <p className="text-sm font-medium text-amber-800 font-serif mb-4">
+              <p className="text-sm font-semibold text-[#D4AF37] font-serif mb-4">
                 {product.urduName}
               </p>
 
               {/* Price */}
               <div className="flex items-baseline gap-3 mb-4 pb-4 border-b border-stone-200">
-                <span className="font-serif text-3xl font-bold text-stone-900 tabular-nums">
+                <span className="font-serif text-3xl font-bold text-[#0A0A0A] tabular-nums">
                   {formatPKR(activePrice * quantity)}
                 </span>
                 {product.originalPrice && (
@@ -108,8 +108,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                     {formatPKR(product.originalPrice * quantity)}
                   </span>
                 )}
-                <span className="text-xs text-emerald-800 font-medium bg-emerald-50 px-2.5 py-0.5 rounded ml-auto">
-                  100% Purity Certified
+                <span className="text-xs text-[#0A0A0A] font-semibold bg-stone-50 border border-[#D4AF37]/40 px-3 py-1 rounded-full ml-auto">
+                  100% Khalis & Raw
                 </span>
               </div>
 
@@ -120,14 +120,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
               {/* Health Benefits */}
               <div className="mb-5">
-                <h4 className="text-xs font-semibold text-stone-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <Heart className="w-3.5 h-3.5 text-amber-600" />
+                <h4 className="text-xs font-bold text-[#0A0A0A] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Heart className="w-3.5 h-3.5 text-[#B91C1C]" />
                   <span>Key Natural Benefits:</span>
                 </h4>
                 <ul className="space-y-1.5">
                   {product.benefits.map((benefit, i) => (
-                    <li key={i} className="text-xs text-stone-600 flex items-start gap-2">
-                      <span className="text-emerald-700 font-bold shrink-0 mt-0.5">✓</span>
+                    <li key={i} className="text-xs text-stone-700 flex items-start gap-2">
+                      <span className="text-[#D4AF37] font-bold shrink-0 mt-0.5">✓</span>
                       <span>{benefit}</span>
                     </li>
                   ))}
@@ -136,15 +136,15 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
               {/* Ingredients */}
               <div className="mb-6">
-                <h4 className="text-xs font-semibold text-stone-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                <h4 className="text-xs font-bold text-[#0A0A0A] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
                   <span>Pure Ingredients:</span>
                 </h4>
                 <div className="flex flex-wrap gap-1.5">
                   {product.ingredients.map((ing, i) => (
                     <span
                       key={i}
-                      className="text-xs bg-stone-100 text-stone-700 px-2.5 py-1 rounded-md"
+                      className="text-xs bg-stone-50 text-[#0A0A0A] border border-[#D4AF37]/30 px-3 py-1 rounded-full font-medium"
                     >
                       {ing}
                     </span>
@@ -154,7 +154,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
               {/* Jar Size Selector */}
               <div className="mb-5">
-                <label className="text-xs font-semibold text-stone-900 uppercase tracking-wider block mb-2">
+                <label className="text-xs font-bold text-stone-600 uppercase tracking-wider block mb-2">
                   Choose Jar Size:
                 </label>
                 <div className="flex gap-2">
@@ -162,10 +162,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                     <button
                       key={opt.weight}
                       onClick={() => setSelectedWeight(opt.weight)}
-                      className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                      className={`flex-1 py-2 px-3 rounded-full text-xs font-bold border transition-all cursor-pointer ${
                         selectedWeight === opt.weight
-                          ? 'bg-emerald-950 text-amber-100 border-emerald-950 shadow-xs'
-                          : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
+                          ? 'bg-[#0A0A0A] text-[#D4AF37] border-[#D4AF37] shadow-xs'
+                          : 'bg-stone-50 text-[#0A0A0A] border-stone-200 hover:border-[#D4AF37]/40'
                       }`}
                     >
                       <div>{opt.weight}</div>
@@ -179,22 +179,22 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
               {/* Quantity Selector */}
               <div className="flex items-center gap-4 mb-6">
-                <label className="text-xs font-semibold text-stone-900 uppercase tracking-wider">
+                <label className="text-xs font-bold text-stone-600 uppercase tracking-wider">
                   Quantity:
                 </label>
-                <div className="flex items-center border border-stone-300 rounded-lg overflow-hidden">
+                <div className="flex items-center border border-stone-200 rounded-full overflow-hidden bg-white">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-3 py-1.5 text-stone-600 hover:bg-stone-100 text-sm font-bold cursor-pointer"
+                    className="px-3.5 py-1.5 text-[#0A0A0A] hover:bg-stone-100 text-sm font-bold cursor-pointer"
                   >
                     -
                   </button>
-                  <span className="px-4 py-1.5 text-xs font-semibold text-stone-900 tabular-nums min-w-[2.5rem] text-center">
+                  <span className="px-4 py-1.5 text-xs font-bold text-[#0A0A0A] tabular-nums min-w-[2.5rem] text-center">
                     {quantity}
                   </span>
                   <button
                     onClick={() => setQuantity(quantity + 1)}
-                    className="px-3 py-1.5 text-stone-600 hover:bg-stone-100 text-sm font-bold cursor-pointer"
+                    className="px-3.5 py-1.5 text-[#0A0A0A] hover:bg-stone-100 text-sm font-bold cursor-pointer"
                   >
                     +
                   </button>
@@ -207,13 +207,13 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={handleAddToCart}
-                  className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+                  className={`flex items-center justify-center gap-2 py-3.5 px-4 rounded-full text-xs font-bold transition-all cursor-pointer border ${
                     added
-                      ? 'bg-emerald-700 text-white'
-                      : 'bg-emerald-900 hover:bg-emerald-800 text-amber-100 shadow-xs'
+                      ? 'bg-[#D4AF37] text-[#0A0A0A] border-[#D4AF37]'
+                      : 'bg-[#0A0A0A] hover:bg-[#1A1A1A] text-white hover:text-[#D4AF37] border-[#D4AF37]/50 shadow-xs'
                   }`}
                 >
-                  <ShoppingBag className="w-4 h-4 text-amber-300" />
+                  <ShoppingBag className="w-4 h-4 text-[#D4AF37]" />
                   <span>{added ? 'Added to Cart!' : 'Add to Cart'}</span>
                 </button>
 
@@ -221,15 +221,15 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                   href={whatsAppUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold bg-[#25D366] hover:bg-[#20bd5a] text-white shadow-xs transition-colors"
+                  className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-full text-xs font-bold bg-[#D4AF37] hover:bg-[#F9E498] text-[#0A0A0A] shadow-xs transition-colors border border-[#AA8010]"
                 >
-                  <MessageCircle className="w-4 h-4 fill-white" />
+                  <MessageCircle className="w-4 h-4 fill-[#0A0A0A] text-[#0A0A0A]" />
                   <span>Order on WhatsApp</span>
                 </a>
               </div>
 
-              <div className="flex items-center justify-center gap-2 text-[11px] text-stone-500 pt-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+              <div className="flex items-center justify-center gap-2 text-[11px] text-stone-500 pt-1 font-medium">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
                 <span>Safely packaged in sanitized food-grade glass jars.</span>
               </div>
             </div>
