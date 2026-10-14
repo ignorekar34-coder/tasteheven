@@ -85,16 +85,29 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2">
           {/* Product Image Column */}
           <div className="relative bg-stone-100 min-h-[300px] md:min-h-full">
-            <img
-              src={product.image || '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg'}
-              alt={product.name}
-              referrerPolicy="no-referrer"
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
-              }}
-              className="w-full h-full object-cover object-center"
-            />
+            {(() => {
+              const categoryFallback =
+                product.category === 'achar'
+                  ? '/src/assets/images/product_traditional_mango_achar_1791803728636.jpg'
+                  : product.category === 'murabba'
+                  ? '/src/assets/images/product_shahi_amla_murabba_1791803749444.jpg'
+                  : '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
+              const imgSrc = product.image || categoryFallback;
+
+              return (
+                <img
+                  key={imgSrc}
+                  src={imgSrc}
+                  alt={product.name}
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = categoryFallback;
+                  }}
+                  className="w-full h-full object-cover object-center"
+                />
+              );
+            })()}
             {/* Badges - positioned cleanly below the back button */}
             <div className="absolute top-16 left-4 flex flex-col gap-1.5 items-start z-10">
               {product.featured && (

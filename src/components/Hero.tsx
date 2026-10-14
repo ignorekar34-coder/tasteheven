@@ -128,10 +128,10 @@ export const Hero: React.FC<HeroProps> = ({ onExploreClick, bannerImage }) => {
           >
             <div className="relative rounded-[36px] overflow-hidden bg-white border border-[#0A0A0A]/10 shadow-xl aspect-4/3 sm:aspect-16/11 lg:aspect-4/3 group">
               <img
+                key={activeBanner}
                 src={activeBanner}
                 alt="Taste Heven Pure Honey, Spicy Achar and Lazeez Murabba Jars"
                 referrerPolicy="no-referrer"
-                loading="lazy"
                 decoding="async"
                 onError={(e) => {
                   e.currentTarget.onerror = null;

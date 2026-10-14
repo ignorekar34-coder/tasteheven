@@ -56,6 +56,8 @@ interface AdminDashboardProps {
   onUpdateAdminUsers: (users: AdminUser[]) => void;
   bannerImage?: string;
   onUpdateBannerImage?: (newBanner: string) => void;
+  onManualSync?: () => Promise<void> | void;
+  isSyncing?: boolean;
 }
 
 type AdminTab = 'overview' | 'orders' | 'products' | 'product-images' | 'banner-image' | 'team';
@@ -76,6 +78,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onUpdateAdminUsers,
   bannerImage,
   onUpdateBannerImage,
+  onManualSync,
+  isSyncing,
 }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [orderSearch, setOrderSearch] = useState('');
@@ -202,8 +206,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleProductCardImageUpload = async (product: Product, file: File) => {
     try {
       setUploadingProductId(product.id);
-      const base64 = await processImageFile(file, 640, 640, 0.78);
-      saveImageToIndexedDb(product.id, base64).catch(() => {});
+      const base64 = await processImageFile(file, 800, 800, 0.78);
       onUpdateProduct({
         ...product,
         image: base64,
@@ -211,7 +214,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setSavedProductImageId(product.id);
       setTimeout(() => setSavedProductImageId(null), 3500);
     } catch (err: any) {
-      alert(err?.message || 'Failed to process image');
+      alert(err?.message || 'تصویر پراسیس کرنے میں خرابی ہوئی۔ براہ کرم دوبارہ کوشش کریں۔');
     } finally {
       setUploadingProductId(null);
     }
@@ -219,8 +222,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const handleResetProductDefaultImage = (product: Product) => {
     const defaultProduct = PRODUCTS.find((p) => p.id === product.id);
-    const originalImage = defaultProduct?.image || '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
-    removeImageFromIndexedDb(product.id).catch(() => {});
+    const categoryFallback =
+      product.category === 'achar'
+        ? '/src/assets/images/product_traditional_mango_achar_1791803728636.jpg'
+        : product.category === 'murabba'
+        ? '/src/assets/images/product_shahi_amla_murabba_1791803749444.jpg'
+        : '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
+    const originalImage = defaultProduct?.image || categoryFallback;
     onUpdateProduct({
       ...product,
       image: originalImage,
@@ -246,9 +254,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setIsUploadingBanner(true);
       const base64 = await processBannerImageFile(file);
       setBannerPreview(base64);
-      setBannerSuccessNotice('Image processed! Click "Save & Apply to Homepage" below to apply it.');
+      onUpdateBannerImage?.(base64);
+      setBannerSuccessNotice('ہوم پیج بینر فوری محفوظ اور لائیو ہو گیا ہے! (Banner updated & live on homepage)');
+      setTimeout(() => setBannerSuccessNotice(null), 4000);
     } catch (err: any) {
-      alert(err?.message || 'Failed to process banner image');
+      alert(err?.message || 'بینر تصویر پراسیس کرنے میں خرابی ہوئی');
     } finally {
       setIsUploadingBanner(false);
     }
@@ -256,17 +266,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const handleSaveBanner = () => {
     if (!bannerPreview) return;
-    saveImageToIndexedDb('hero_banner', bannerPreview).catch(() => {});
     onUpdateBannerImage?.(bannerPreview);
-    setBannerSuccessNotice('Homepage Hero Banner updated live! Check the homepage.');
+    setBannerSuccessNotice('ہوم پیج بینر کامیابی سے محفوظ اور لائیو ہو گیا ہے! (Banner applied live to homepage)');
     setTimeout(() => setBannerSuccessNotice(null), 4000);
   };
 
   const handleResetDefaultBanner = () => {
-    removeImageFromIndexedDb('hero_banner').catch(() => {});
     setBannerPreview(DEFAULT_HERO_BANNER);
     onUpdateBannerImage?.(DEFAULT_HERO_BANNER);
-    setBannerSuccessNotice('Original luxury hero banner restored and live on homepage!');
+    setBannerSuccessNotice('اصل لگژری بینر بحال اور ہوم پیج پر لائیو ہو گیا ہے! (Original banner restored)');
     setTimeout(() => setBannerSuccessNotice(null), 4000);
   };
 
@@ -368,7 +376,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Active User Badge */}
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 border border-[#D4AF37]/30 text-xs">
               <div className="w-2 h-2 rounded-full bg-[#D4AF37]" />
@@ -377,6 +385,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <span className="text-[#D4AF37] text-[10px] ml-1">({currentUser.role})</span>
               </div>
             </div>
+
+            {onManualSync && (
+              <button
+                onClick={onManualSync}
+                disabled={isSyncing}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#D4AF37] hover:bg-[#c49f2e] text-[#0A0A0A] text-xs font-bold rounded-lg transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                title="Sync latest images and products between Phone and Laptop"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync Phone & Laptop'}</span>
+                <span className="sm:hidden">{isSyncing ? '...' : 'Sync'}</span>
+              </button>
+            )}
 
             <button
               onClick={onReturnToStore}
@@ -1009,7 +1030,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     Upload new photos for any jar in your pantry. Images are automatically converted into optimized high-definition format, saved to Cloud Firestore & localStorage, and immediately updated live across the homepage and product pages.
                   </p>
                 </div>
-                <div className="flex items-center gap-2 self-start md:self-auto">
+                <div className="flex items-center gap-2 self-start md:self-auto flex-wrap">
+                  {onManualSync && (
+                    <button
+                      onClick={onManualSync}
+                      disabled={isSyncing}
+                      className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#D4AF37] hover:bg-[#c49f2e] text-[#0A0A0A] rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                      title="Sync images between phone and laptop"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                      <span>{isSyncing ? 'Syncing...' : 'Sync Phone & Laptop'}</span>
+                    </button>
+                  )}
                   <button
                     onClick={onReturnToStore}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
@@ -1109,28 +1141,46 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     {/* Image Preview Box */}
                     <div className="px-5">
                       <div className="relative aspect-4/3 w-full rounded-2xl overflow-hidden bg-stone-100 border border-stone-200 group">
-                        <img
-                          src={prod.image || '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg'}
-                          alt={prod.name}
-                          referrerPolicy="no-referrer"
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
-                          }}
-                          className="w-full h-full object-cover object-center group-hover:scale-102 transition-transform duration-300"
-                        />
+                        {(() => {
+                          const categoryFallback =
+                            prod.category === 'achar'
+                              ? '/src/assets/images/product_traditional_mango_achar_1791803728636.jpg'
+                              : prod.category === 'murabba'
+                              ? '/src/assets/images/product_shahi_amla_murabba_1791803749444.jpg'
+                              : '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
+                          const displaySrc = prod.image || categoryFallback;
+
+                          return (
+                            <img
+                              key={displaySrc}
+                              src={displaySrc}
+                              alt={prod.name}
+                              referrerPolicy="no-referrer"
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = categoryFallback;
+                              }}
+                              className="w-full h-full object-cover object-center group-hover:scale-102 transition-transform duration-300"
+                            />
+                          );
+                        })()}
+
+                        {/* Loading Spinner during image upload & compression */}
                         {isUploading && (
-                          <div className="absolute inset-0 bg-stone-950/70 backdrop-blur-xs flex flex-col items-center justify-center text-white text-xs gap-2">
-                            <RefreshCw className="w-5 h-5 text-[#D4AF37] animate-spin" />
-                            <span>Processing Photo...</span>
+                          <div className="absolute inset-0 bg-stone-950/85 backdrop-blur-xs flex flex-col items-center justify-center text-white text-xs gap-2 z-20">
+                            <div className="w-8 h-8 rounded-full border-3 border-[#D4AF37]/30 border-t-[#D4AF37] animate-spin flex items-center justify-center" />
+                            <span className="font-bold text-[#D4AF37]">Compressing (Max 800px)...</span>
+                            <span className="text-[10px] text-stone-300">Saving to Phone & Cloud</span>
                           </div>
                         )}
+
                         <div className="absolute bottom-2 left-2 bg-[#0A0A0A]/80 backdrop-blur-xs text-white text-[10px] font-semibold px-2 py-0.5 rounded-md border border-white/20">
                           Active Photo
                         </div>
                         {prod.image?.startsWith('data:') && (
-                          <div className="absolute top-2 right-2 bg-emerald-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-md shadow-xs">
-                            Custom Upload
+                          <div className="absolute top-2 right-2 bg-emerald-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1">
+                            <Check className="w-2.5 h-2.5" />
+                            <span>Custom (Base64)</span>
                           </div>
                         )}
                       </div>
@@ -1201,7 +1251,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     Change the main banner showing honey jars on the homepage (Eat Fresh, Feel Heaven section). Upload a new banner image below, preview it instantly, and apply it live to the website.
                   </p>
                 </div>
-                <div className="flex items-center gap-2 self-start md:self-auto">
+                <div className="flex items-center gap-2 self-start md:self-auto flex-wrap">
+                  {onManualSync && (
+                    <button
+                      onClick={onManualSync}
+                      disabled={isSyncing}
+                      className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#D4AF37] hover:bg-[#c49f2e] text-[#0A0A0A] rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                      title="Sync banner and products with Cloud"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                      <span>{isSyncing ? 'Syncing...' : 'Sync Phone & Laptop'}</span>
+                    </button>
+                  )}
                   <button
                     onClick={onReturnToStore}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
@@ -1239,24 +1300,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       Upload New Banner Photo
                     </h3>
                     <p className="text-xs text-stone-500 mt-0.5">
-                      Recommended: High resolution landscape photo (16:9 or 16:10 aspect ratio, e.g. 1920x1080 or 1200x800).
+                      Auto-compressed to 800px width for ultra-fast loading across mobile and desktop.
                     </p>
                   </div>
 
                   {/* Drag and Drop / Click Area */}
-                  <label className="border-2 border-dashed border-[#D4AF37]/60 hover:border-[#D4AF37] bg-stone-50/70 hover:bg-amber-50/30 rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all group">
+                  <label className="relative border-2 border-dashed border-[#D4AF37]/60 hover:border-[#D4AF37] bg-stone-50/70 hover:bg-amber-50/30 rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all group overflow-hidden">
+                    {isUploadingBanner && (
+                      <div className="absolute inset-0 bg-stone-950/85 backdrop-blur-xs flex flex-col items-center justify-center text-white text-xs gap-2.5 z-20">
+                        <div className="w-9 h-9 rounded-full border-3 border-[#D4AF37]/30 border-t-[#D4AF37] animate-spin flex items-center justify-center" />
+                        <span className="font-bold text-[#D4AF37]">Compressing Banner (Max 800px)...</span>
+                        <span className="text-[10px] text-stone-300">Saving to localStorage & Cloud</span>
+                      </div>
+                    )}
                     <div className="w-14 h-14 rounded-full bg-[#0A0A0A] text-[#D4AF37] flex items-center justify-center shadow-md mb-3 group-hover:scale-105 transition-transform">
                       {isUploadingBanner ? (
-                        <RefreshCw className="w-6 h-6 animate-spin text-[#D4AF37]" />
+                        <div className="w-6 h-6 rounded-full border-2 border-[#D4AF37]/30 border-t-[#D4AF37] animate-spin" />
                       ) : (
                         <Upload className="w-6 h-6" />
                       )}
                     </div>
                     <span className="text-xs sm:text-sm font-bold text-stone-900 mb-1">
-                      {isUploadingBanner ? 'Processing image...' : 'Click to Upload New Banner'}
+                      {isUploadingBanner ? 'Compressing image...' : 'Click to Upload New Banner'}
                     </span>
                     <span className="text-[11px] text-stone-500">
-                      Supports JPG, PNG, WebP (Auto-converted to base64)
+                      Supports JPG, PNG, WebP (Max 800px Base64)
                     </span>
                     <input
                       type="file"

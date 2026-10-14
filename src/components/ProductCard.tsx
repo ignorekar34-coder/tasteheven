@@ -46,18 +46,30 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     >
       {/* Product Image in Rounded Container */}
       <div className="relative aspect-4/3 bg-stone-100 overflow-hidden m-2.5 rounded-[24px]">
-        <img
-          src={product.image || '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg'}
-          alt={product.name}
-          referrerPolicy="no-referrer"
-          loading="lazy"
-          decoding="async"
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
-          }}
-          className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-        />
+        {(() => {
+          const categoryFallback =
+            product.category === 'achar'
+              ? '/src/assets/images/product_traditional_mango_achar_1791803728636.jpg'
+              : product.category === 'murabba'
+              ? '/src/assets/images/product_shahi_amla_murabba_1791803749444.jpg'
+              : '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
+          const imgSrc = product.image || categoryFallback;
+
+          return (
+            <img
+              key={imgSrc}
+              src={imgSrc}
+              alt={product.name}
+              referrerPolicy="no-referrer"
+              decoding="async"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = categoryFallback;
+              }}
+              className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+            />
+          );
+        })()}
 
         {/* Badges Container */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start z-10">

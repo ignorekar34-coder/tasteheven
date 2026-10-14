@@ -34,17 +34,25 @@ import {
   deleteProductFromFirestore,
   subscribeToBannerImage,
   saveBannerImageToFirestore,
+  fetchProductsFromFirestore,
+  fetchBannerFromFirestore,
 } from './services/firebaseService';
-import { Sparkles, Search, RotateCcw, Shield, ArrowRight, CloudCheck } from 'lucide-react';
-import { getImageFromIndexedDb, saveImageToIndexedDb } from './utils/localImageDb';
+import { Sparkles, Search, RotateCcw, Shield, ArrowRight, CloudCheck, RefreshCw } from 'lucide-react';
+
 
 
 export default function App() {
-  // Load products with Firestore sync + localStorage persistence
+  // Load products with single JSON object in localStorage ('taste_heven_products')
   const [products, setProducts] = useState<Product[]>(() => {
     try {
       const saved = localStorage.getItem('taste_heven_products');
-      return saved ? JSON.parse(saved) : PRODUCTS;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+      return PRODUCTS;
     } catch {
       return PRODUCTS;
     }
@@ -128,6 +136,11 @@ export default function App() {
     }
   });
 
+  // Force update counter to instantly refresh DOM across components
+  const [forceRefreshKey, setForceRefreshKey] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+
   // Open single product detail with history pushState so Back works
   const handleOpenProduct = (prod: Product) => {
     setSelectedProduct(prod);
@@ -202,41 +215,26 @@ export default function App() {
     };
   }, [viewMode]);
 
-  // Restore any custom images saved in IndexedDB on boot
+  // On boot: clean up any legacy fragmented image caches
   useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        let hasCustomImages = false;
-        const restored = await Promise.all(
-          products.map(async (p) => {
-            const cachedImg = await getImageFromIndexedDb(p.id);
-            if (cachedImg && cachedImg !== p.image) {
-              hasCustomImages = true;
-              return { ...p, image: cachedImg };
-            }
-            return p;
-          })
-        );
-        if (hasCustomImages && active) {
-          setProducts(restored);
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (
+          k &&
+          (k.startsWith('taste_heven_img_cache_') ||
+            k.startsWith('taste_heven_cache_') ||
+            k === 'TasteHevenImageStore')
+        ) {
+          keysToRemove.push(k);
         }
-
-        const cachedBanner = await getImageFromIndexedDb('hero_banner');
-        if (cachedBanner && active) {
-          setBannerImage(cachedBanner);
-        }
-      } catch (err) {
-        console.warn('IndexedDB initial load error:', err);
       }
-    })();
-
-    return () => {
-      active = false;
-    };
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+    } catch {}
   }, []);
 
-  // Test Firebase connection & subscribe to real-time updates
+  // Test Firebase connection & subscribe to real-time updates for instant multi-device sync
   useEffect(() => {
     testConnection().then((connected) => {
       setIsFirebaseConnected(connected);
@@ -248,21 +246,13 @@ export default function App() {
 
     const unsubscribeProducts = subscribeToProducts((cloudProducts) => {
       if (cloudProducts && cloudProducts.length > 0) {
-        setProducts((prev) => {
-          // Smart merge: don't let cloud overwrite user's custom images with static defaults
-          return cloudProducts.map((cp) => {
-            const existing = prev.find((p) => p.id === cp.id);
-            if (
-              existing &&
-              existing.image &&
-              existing.image.startsWith('data:') &&
-              (!cp.image || !cp.image.startsWith('data:'))
-            ) {
-              return { ...cp, image: existing.image };
-            }
-            return cp;
-          });
-        });
+        setProducts(cloudProducts);
+        try {
+          localStorage.setItem('taste_heven_products', JSON.stringify(cloudProducts));
+        } catch (e) {
+          console.warn('localStorage save warning:', e);
+        }
+        setForceRefreshKey((k) => k + 1);
       }
     });
 
@@ -271,7 +261,10 @@ export default function App() {
         setBannerImage(cloudBanner);
         try {
           localStorage.setItem('taste_heven_banner_image', cloudBanner);
-        } catch {}
+        } catch (e) {
+          console.warn('banner localStorage warning:', e);
+        }
+        setForceRefreshKey((k) => k + 1);
       }
     });
 
@@ -282,12 +275,12 @@ export default function App() {
     };
   }, []);
 
-  // Persist products to localStorage (clean and non-destructive)
+  // Persist products to single JSON object in localStorage
   useEffect(() => {
     try {
       localStorage.setItem('taste_heven_products', JSON.stringify(products));
     } catch (e) {
-      console.warn('localStorage full, relying on IndexedDB:', e);
+      console.warn('localStorage save warning:', e);
     }
   }, [products]);
 
@@ -469,27 +462,82 @@ export default function App() {
     setTimeout(() => setToast((t) => ({ ...t, visible: false })), 2000);
   };
 
-  // Product updates -> sync to Firestore, IndexedDB, and React state!
-  const handleUpdateProduct = (updated: Product) => {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === updated.id ? updated : p))
-    );
-    if (updated.image) {
-      saveImageToIndexedDb(updated.id, updated.image).catch(() => {});
+  // Manual Cross-Device Sync: Fetch latest from Firestore & update localStorage + DOM
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    try {
+      const [cloudProds, cloudBanner] = await Promise.all([
+        fetchProductsFromFirestore(),
+        fetchBannerFromFirestore(),
+      ]);
+
+      if (cloudProds && cloudProds.length > 0) {
+        setProducts(cloudProds);
+        try {
+          localStorage.setItem('taste_heven_products', JSON.stringify(cloudProds));
+        } catch (e) {
+          console.warn('localStorage save warning:', e);
+        }
+      }
+
+      if (cloudBanner) {
+        setBannerImage(cloudBanner);
+        try {
+          localStorage.setItem('taste_heven_banner_image', cloudBanner);
+        } catch (e) {
+          console.warn('Banner localStorage warning:', e);
+        }
+      }
+
+      setForceRefreshKey((k) => k + 1);
+      setToast({
+        visible: true,
+        message: 'Sync Complete Across Devices',
+        subMessage: 'تمام پروڈکٹس اور ہوم پیج بینر کلاؤڈ اور فون کے ساتھ سنک ہو چکے ہیں۔',
+      });
+      setTimeout(() => setToast((t) => ({ ...t, visible: false })), 3000);
+    } catch (err: any) {
+      console.warn('Manual sync warning:', err);
+    } finally {
+      setIsSyncing(false);
     }
+  };
+
+  // Product updates -> sync to single JSON in localStorage, Firestore, and force DOM refresh!
+  const handleUpdateProduct = (updated: Product) => {
+    setProducts((prev) => {
+      const next = prev.map((p) => (p.id === updated.id ? updated : p));
+      try {
+        localStorage.setItem('taste_heven_products', JSON.stringify(next));
+      } catch (e) {
+        console.warn('localStorage save warning:', e);
+      }
+      return next;
+    });
+
+    setForceRefreshKey((k) => k + 1);
+
     saveProductToFirestore(updated).catch((err) =>
       console.error('Firestore updateProduct error:', err)
     );
+
     setToast({
       visible: true,
-      message: 'Product Updated',
-      subMessage: `${updated.name} کی نئی تصویر اور معلومات اپڈیٹ ہو چکی ہیں۔`,
+      message: 'Product Updated Live',
+      subMessage: `${updated.name} کی نئی تصویر فوری لائیو اپڈیٹ ہو چکی ہے۔`,
     });
     setTimeout(() => setToast((t) => ({ ...t, visible: false })), 2500);
   };
 
   const handleAddProduct = (newProd: Product) => {
-    setProducts((prev) => [newProd, ...prev]);
+    setProducts((prev) => {
+      const next = [newProd, ...prev];
+      try {
+        localStorage.setItem('taste_heven_products', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+    setForceRefreshKey((k) => k + 1);
     saveProductToFirestore(newProd).catch((err) =>
       console.error('Firestore addProduct error:', err)
     );
@@ -502,7 +550,14 @@ export default function App() {
   };
 
   const handleDeleteProduct = (productId: string) => {
-    setProducts((prev) => prev.filter((p) => p.id !== productId));
+    setProducts((prev) => {
+      const next = prev.filter((p) => p.id !== productId);
+      try {
+        localStorage.setItem('taste_heven_products', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+    setForceRefreshKey((k) => k + 1);
     deleteProductFromFirestore(productId).catch((err) =>
       console.error('Firestore deleteProduct error:', err)
     );
@@ -561,7 +616,7 @@ export default function App() {
     setTimeout(() => setToast((t) => ({ ...t, visible: false })), 2500);
   };
 
-  // Banner image update -> sync to Firestore, IndexedDB & localStorage
+  // Banner image update -> sync to Firestore & localStorage, update state & DOM immediately
   const handleUpdateBannerImage = async (newBanner: string) => {
     setBannerImage(newBanner);
     try {
@@ -569,7 +624,8 @@ export default function App() {
     } catch (e) {
       console.warn('Banner localStorage warning:', e);
     }
-    saveImageToIndexedDb('hero_banner', newBanner).catch(() => {});
+    setForceRefreshKey((k) => k + 1);
+
     await saveBannerImageToFirestore(newBanner).catch((err) =>
       console.error('Firestore saveBanner error:', err)
     );
@@ -586,6 +642,14 @@ export default function App() {
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const handleReturnToStore = () => {
+    setViewMode('store');
+    setForceRefreshKey((k) => k + 1);
+    setTimeout(() => {
+      scrollToProducts();
+    }, 100);
+  };
+
   // Render Admin Dashboard if in admin view
   if (viewMode === 'admin' && currentAdmin) {
     return (
@@ -593,7 +657,7 @@ export default function App() {
         <AdminDashboard
           currentUser={currentAdmin}
           onLogout={handleAdminLogout}
-          onReturnToStore={() => setViewMode('store')}
+          onReturnToStore={handleReturnToStore}
           products={products}
           onUpdateProduct={handleUpdateProduct}
           onAddProduct={handleAddProduct}
@@ -606,6 +670,8 @@ export default function App() {
           onUpdateAdminUsers={setAdminUsers}
           bannerImage={bannerImage}
           onUpdateBannerImage={handleUpdateBannerImage}
+          onManualSync={handleManualSync}
+          isSyncing={isSyncing}
         />
         <Toast
           message={toast.message}
@@ -633,6 +699,15 @@ export default function App() {
               <CloudCheck className="w-3 h-3 text-emerald-400" />
               <span>Firebase Synced</span>
             </span>
+            <button
+              onClick={handleManualSync}
+              disabled={isSyncing}
+              className="hidden md:inline-flex items-center gap-1 px-2.5 py-0.5 rounded bg-emerald-900 hover:bg-emerald-800 text-amber-200 text-[11px] font-semibold border border-emerald-700 cursor-pointer disabled:opacity-50 ml-1"
+              title="Sync latest images between phone & laptop"
+            >
+              <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>{isSyncing ? 'Syncing...' : 'Sync Devices'}</span>
+            </button>
           </div>
           <button
             onClick={() => setViewMode('admin')}
@@ -659,12 +734,18 @@ export default function App() {
         onSelectCategory={setActiveCategory}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        onSync={handleManualSync}
+        isSyncing={isSyncing}
       />
 
       {/* Main Content Area */}
       <main className="flex-1">
         {/* 2. Taste Heaven Hero Banner */}
-        <Hero onExploreClick={scrollToProducts} bannerImage={bannerImage} />
+        <Hero
+          key={`hero-banner-${forceRefreshKey}-${bannerImage ? bannerImage.slice(-15) : 'default'}`}
+          onExploreClick={scrollToProducts}
+          bannerImage={bannerImage}
+        />
 
         {/* 3. Categories: Honey, Achar, Murabba */}
         <Categories
@@ -721,7 +802,7 @@ export default function App() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                 {filteredProducts.map((product, index) => (
                   <ProductCard
-                    key={product.id}
+                    key={`${product.id}-${forceRefreshKey}-${product.image ? product.image.slice(-15) : 'default'}`}
                     product={product}
                     index={index}
                     onAddToCart={(prod, weight, price) =>

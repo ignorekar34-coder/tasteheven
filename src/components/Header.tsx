@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingBag, Search, MessageCircle, Sparkles, X, Shield } from 'lucide-react';
+import { ShoppingBag, Search, MessageCircle, Sparkles, X, Shield, RefreshCw } from 'lucide-react';
 import { ProductCategory } from '../types';
 import { generateGeneralInquiryWhatsAppUrl } from '../utils/whatsapp';
 import { TasteHevenLogo } from './TasteHevenLogo';
@@ -12,6 +12,8 @@ interface HeaderProps {
   onSelectCategory: (category: ProductCategory) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  onSync?: () => void;
+  isSyncing?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -21,6 +23,8 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectCategory,
   searchQuery,
   onSearchChange,
+  onSync,
+  isSyncing,
 }) => {
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
 
@@ -44,7 +48,19 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            {onSync && (
+              <button
+                onClick={onSync}
+                disabled={isSyncing}
+                className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#D4AF37]/20 hover:bg-[#D4AF37]/35 text-[#D4AF37] hover:text-white text-[11px] font-semibold transition-colors cursor-pointer border border-[#D4AF37]/50 disabled:opacity-50"
+                title="Sync products and images with Cloud Firestore (phone & laptop)"
+              >
+                <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span>{isSyncing ? 'Syncing...' : 'Sync Devices'}</span>
+              </button>
+            )}
+
             <a
               href={generateGeneralInquiryWhatsAppUrl('Customer Support & Order Assistance')}
               target="_blank"

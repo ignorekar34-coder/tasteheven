@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   setDoc,
   updateDoc,
@@ -141,6 +142,18 @@ export function subscribeToProducts(
           ...(d.data() as Product),
           id: d.id,
         }));
+
+        // Preserve consistent catalog ordering across devices
+        const defaultOrder = PRODUCTS.map((p) => p.id);
+        products.sort((a, b) => {
+          const indexA = defaultOrder.indexOf(a.id);
+          const indexB = defaultOrder.indexOf(b.id);
+          if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+          if (indexA !== -1) return -1;
+          if (indexB !== -1) return 1;
+          return a.name.localeCompare(b.name);
+        });
+
         onUpdate(products);
       },
       (error) => {
@@ -188,6 +201,42 @@ export async function deleteProductFromFirestore(productId: string): Promise<voi
     await deleteDoc(docRef);
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, `${PRODUCTS_COLLECTION}/${productId}`);
+  }
+}
+
+/**
+ * Directly fetch latest products from Firestore (for cross-device instant sync)
+ */
+export async function fetchProductsFromFirestore(): Promise<Product[]> {
+  try {
+    const snap = await getDocs(collection(db, PRODUCTS_COLLECTION));
+    if (snap.empty) return [];
+    return snap.docs.map((d) => ({
+      ...(d.data() as Product),
+      id: d.id,
+    }));
+  } catch (err) {
+    console.warn('fetchProductsFromFirestore error:', err);
+    return [];
+  }
+}
+
+/**
+ * Directly fetch latest banner image from Firestore
+ */
+export async function fetchBannerFromFirestore(): Promise<string | null> {
+  try {
+    const snap = await getDoc(doc(db, SETTINGS_COLLECTION, HERO_BANNER_DOC));
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data && typeof data.bannerUrl === 'string' && data.bannerUrl) {
+        return data.bannerUrl;
+      }
+    }
+    return null;
+  } catch (err) {
+    console.warn('fetchBannerFromFirestore error:', err);
+    return null;
   }
 }
 
