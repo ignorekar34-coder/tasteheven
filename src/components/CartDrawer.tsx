@@ -153,6 +153,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     alt={item.product.name}
                     referrerPolicy="no-referrer"
                     onError={(e) => {
+                      e.currentTarget.onerror = null;
                       e.currentTarget.src = '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
                     }}
                     className="w-16 h-16 rounded-lg object-cover bg-stone-200 shrink-0 border border-stone-200"

@@ -134,6 +134,7 @@ export const Hero: React.FC<HeroProps> = ({ onExploreClick, bannerImage }) => {
                 loading="lazy"
                 decoding="async"
                 onError={(e) => {
+                  e.currentTarget.onerror = null;
                   e.currentTarget.src = DEFAULT_HERO_BANNER;
                 }}
                 className="w-full h-full object-cover object-center group-hover:scale-[1.03] transition-transform duration-700 ease-out"

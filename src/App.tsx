@@ -36,6 +36,7 @@ import {
   saveBannerImageToFirestore,
 } from './services/firebaseService';
 import { Sparkles, Search, RotateCcw, Shield, ArrowRight, CloudCheck } from 'lucide-react';
+import { getImageFromIndexedDb, saveImageToIndexedDb } from './utils/localImageDb';
 
 
 export default function App() {
@@ -176,13 +177,15 @@ export default function App() {
     message: '',
   });
 
-  // Initialize Lenis smooth scroll for 60fps Sweetgreen-style experience
+  // Initialize Lenis smooth scroll only in store mode to avoid admin scroll conflicts
   useEffect(() => {
+    if (viewMode === 'admin') return;
+
     const lenis = new Lenis({
-      duration: 1.2,
+      duration: 1.0,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
-      touchMultiplier: 2,
+      touchMultiplier: 1.5,
     });
 
     let rafId: number;
@@ -196,6 +199,40 @@ export default function App() {
     return () => {
       cancelAnimationFrame(rafId);
       lenis.destroy();
+    };
+  }, [viewMode]);
+
+  // Restore any custom images saved in IndexedDB on boot
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        let hasCustomImages = false;
+        const restored = await Promise.all(
+          products.map(async (p) => {
+            const cachedImg = await getImageFromIndexedDb(p.id);
+            if (cachedImg && cachedImg !== p.image) {
+              hasCustomImages = true;
+              return { ...p, image: cachedImg };
+            }
+            return p;
+          })
+        );
+        if (hasCustomImages && active) {
+          setProducts(restored);
+        }
+
+        const cachedBanner = await getImageFromIndexedDb('hero_banner');
+        if (cachedBanner && active) {
+          setBannerImage(cachedBanner);
+        }
+      } catch (err) {
+        console.warn('IndexedDB initial load error:', err);
+      }
+    })();
+
+    return () => {
+      active = false;
     };
   }, []);
 
@@ -211,7 +248,21 @@ export default function App() {
 
     const unsubscribeProducts = subscribeToProducts((cloudProducts) => {
       if (cloudProducts && cloudProducts.length > 0) {
-        setProducts(cloudProducts);
+        setProducts((prev) => {
+          // Smart merge: don't let cloud overwrite user's custom images with static defaults
+          return cloudProducts.map((cp) => {
+            const existing = prev.find((p) => p.id === cp.id);
+            if (
+              existing &&
+              existing.image &&
+              existing.image.startsWith('data:') &&
+              (!cp.image || !cp.image.startsWith('data:'))
+            ) {
+              return { ...cp, image: existing.image };
+            }
+            return cp;
+          });
+        });
       }
     });
 
@@ -231,24 +282,12 @@ export default function App() {
     };
   }, []);
 
-  // Persist products to localStorage (with resilient quota handling)
+  // Persist products to localStorage (clean and non-destructive)
   useEffect(() => {
     try {
       localStorage.setItem('taste_heven_products', JSON.stringify(products));
     } catch (e) {
-      console.warn('localStorage full, applying fallback optimization:', e);
-      try {
-        const trimmed = products.map((p) => ({
-          ...p,
-          image:
-            p.image?.startsWith('data:') && p.image.length > 150000
-              ? '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg'
-              : p.image,
-        }));
-        localStorage.setItem('taste_heven_products', JSON.stringify(trimmed));
-      } catch {
-        // Safe failover
-      }
+      console.warn('localStorage full, relying on IndexedDB:', e);
     }
   }, [products]);
 
@@ -430,18 +469,21 @@ export default function App() {
     setTimeout(() => setToast((t) => ({ ...t, visible: false })), 2000);
   };
 
-  // Product updates -> sync to Firestore!
+  // Product updates -> sync to Firestore, IndexedDB, and React state!
   const handleUpdateProduct = (updated: Product) => {
     setProducts((prev) =>
       prev.map((p) => (p.id === updated.id ? updated : p))
     );
+    if (updated.image) {
+      saveImageToIndexedDb(updated.id, updated.image).catch(() => {});
+    }
     saveProductToFirestore(updated).catch((err) =>
       console.error('Firestore updateProduct error:', err)
     );
     setToast({
       visible: true,
       message: 'Product Updated',
-      subMessage: `${updated.name} changes saved to Cloud Firestore.`,
+      subMessage: `${updated.name} کی نئی تصویر اور معلومات اپڈیٹ ہو چکی ہیں۔`,
     });
     setTimeout(() => setToast((t) => ({ ...t, visible: false })), 2500);
   };
@@ -519,7 +561,7 @@ export default function App() {
     setTimeout(() => setToast((t) => ({ ...t, visible: false })), 2500);
   };
 
-  // Banner image update -> sync to Firestore & localStorage
+  // Banner image update -> sync to Firestore, IndexedDB & localStorage
   const handleUpdateBannerImage = async (newBanner: string) => {
     setBannerImage(newBanner);
     try {
@@ -527,6 +569,7 @@ export default function App() {
     } catch (e) {
       console.warn('Banner localStorage warning:', e);
     }
+    saveImageToIndexedDb('hero_banner', newBanner).catch(() => {});
     await saveBannerImageToFirestore(newBanner).catch((err) =>
       console.error('Firestore saveBanner error:', err)
     );

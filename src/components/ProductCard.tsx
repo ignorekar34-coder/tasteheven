@@ -53,6 +53,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           loading="lazy"
           decoding="async"
           onError={(e) => {
+            e.currentTarget.onerror = null;
             e.currentTarget.src = '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
           }}
           className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"

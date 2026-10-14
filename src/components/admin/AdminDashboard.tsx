@@ -34,9 +34,11 @@ import {
   Check,
   Layers,
 } from 'lucide-react';
-import { processImageFile } from '../../utils/imageUtils';
+import { processImageFile, processBannerImageFile } from '../../utils/imageUtils';
+import { saveImageToIndexedDb, removeImageFromIndexedDb } from '../../utils/localImageDb';
 import { PRODUCTS } from '../../data/products';
 import { DEFAULT_HERO_BANNER } from '../Hero';
+
 
 interface AdminDashboardProps {
   currentUser: AdminUser;
@@ -149,11 +151,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (!file || !editingProduct) return;
     try {
       setIsUploadingEditImage(true);
-      const base64 = await processImageFile(file);
+      const base64 = await processImageFile(file, 640, 640, 0.78);
       setEditingProduct({
         ...editingProduct,
         image: base64,
       });
+      saveImageToIndexedDb(editingProduct.id, base64).catch(() => {});
     } catch (err: any) {
       alert(err?.message || 'Failed to process image');
     } finally {
@@ -168,7 +171,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (!file) return;
     try {
       setIsUploadingNewImage(true);
-      const base64 = await processImageFile(file);
+      const base64 = await processImageFile(file, 640, 640, 0.78);
       setNewProd((prev) => ({
         ...prev,
         image: base64,
@@ -199,7 +202,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleProductCardImageUpload = async (product: Product, file: File) => {
     try {
       setUploadingProductId(product.id);
-      const base64 = await processImageFile(file, 1000, 1000, 0.88);
+      const base64 = await processImageFile(file, 640, 640, 0.78);
+      saveImageToIndexedDb(product.id, base64).catch(() => {});
       onUpdateProduct({
         ...product,
         image: base64,
@@ -216,6 +220,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleResetProductDefaultImage = (product: Product) => {
     const defaultProduct = PRODUCTS.find((p) => p.id === product.id);
     const originalImage = defaultProduct?.image || '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
+    removeImageFromIndexedDb(product.id).catch(() => {});
     onUpdateProduct({
       ...product,
       image: originalImage,
@@ -239,7 +244,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleBannerFileUpload = async (file: File) => {
     try {
       setIsUploadingBanner(true);
-      const base64 = await processImageFile(file, 1600, 1000, 0.88);
+      const base64 = await processBannerImageFile(file);
       setBannerPreview(base64);
       setBannerSuccessNotice('Image processed! Click "Save & Apply to Homepage" below to apply it.');
     } catch (err: any) {
@@ -251,12 +256,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const handleSaveBanner = () => {
     if (!bannerPreview) return;
+    saveImageToIndexedDb('hero_banner', bannerPreview).catch(() => {});
     onUpdateBannerImage?.(bannerPreview);
     setBannerSuccessNotice('Homepage Hero Banner updated live! Check the homepage.');
     setTimeout(() => setBannerSuccessNotice(null), 4000);
   };
 
   const handleResetDefaultBanner = () => {
+    removeImageFromIndexedDb('hero_banner').catch(() => {});
     setBannerPreview(DEFAULT_HERO_BANNER);
     onUpdateBannerImage?.(DEFAULT_HERO_BANNER);
     setBannerSuccessNotice('Original luxury hero banner restored and live on homepage!');
@@ -913,9 +920,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <td className="p-3">
                           <div className="flex items-center gap-3">
                             <img
-                              src={prod.image}
+                              src={prod.image || '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg'}
                               alt={prod.name}
                               referrerPolicy="no-referrer"
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
+                              }}
                               className="w-12 h-12 rounded-lg object-cover bg-stone-100 border border-stone-200 shrink-0"
                             />
                             <div>
@@ -1103,6 +1114,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           alt={prod.name}
                           referrerPolicy="no-referrer"
                           onError={(e) => {
+                            e.currentTarget.onerror = null;
                             e.currentTarget.src = '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
                           }}
                           className="w-full h-full object-cover object-center group-hover:scale-102 transition-transform duration-300"
@@ -1334,6 +1346,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       alt="Banner Preview"
                       referrerPolicy="no-referrer"
                       onError={(e) => {
+                        e.currentTarget.onerror = null;
                         e.currentTarget.src = DEFAULT_HERO_BANNER;
                       }}
                       className="w-full h-full object-cover object-center"
@@ -1517,6 +1530,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       alt={editingProduct.name}
                       referrerPolicy="no-referrer"
                       onError={(e) => {
+                        e.currentTarget.onerror = null;
                         e.currentTarget.src = '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
                       }}
                       className="w-full h-full object-cover"
@@ -1811,6 +1825,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       alt="New Product"
                       referrerPolicy="no-referrer"
                       onError={(e) => {
+                        e.currentTarget.onerror = null;
                         e.currentTarget.src = '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
                       }}
                       className="w-full h-full object-cover"
