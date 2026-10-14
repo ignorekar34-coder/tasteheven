@@ -25,8 +25,13 @@ import {
   Key,
   Save,
   X,
-  Phone
+  Phone,
+  Upload,
+  Image as ImageIcon,
+  Sparkles,
+  RefreshCw,
 } from 'lucide-react';
+import { processImageFile } from '../../utils/imageUtils';
 
 interface AdminDashboardProps {
   currentUser: AdminUser;
@@ -123,6 +128,48 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       p.urduName.includes(productSearch);
     return matchesCat && matchesSearch;
   });
+
+  // Image upload states
+  const [isUploadingEditImage, setIsUploadingEditImage] = useState(false);
+  const [isUploadingNewImage, setIsUploadingNewImage] = useState(false);
+
+  // Handle Edit Product Image Upload with Base64 Conversion
+  const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingProduct) return;
+    try {
+      setIsUploadingEditImage(true);
+      const base64 = await processImageFile(file);
+      setEditingProduct({
+        ...editingProduct,
+        image: base64,
+      });
+    } catch (err: any) {
+      alert(err?.message || 'Failed to process image');
+    } finally {
+      setIsUploadingEditImage(false);
+      e.target.value = '';
+    }
+  };
+
+  // Handle Create Product Image Upload with Base64 Conversion
+  const handleNewImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setIsUploadingNewImage(true);
+      const base64 = await processImageFile(file);
+      setNewProd((prev) => ({
+        ...prev,
+        image: base64,
+      }));
+    } catch (err: any) {
+      alert(err?.message || 'Failed to process image');
+    } finally {
+      setIsUploadingNewImage(false);
+      e.target.value = '';
+    }
+  };
 
   // Handle Save Product Edit
   const handleSaveProductEdit = (e: React.FormEvent) => {
@@ -872,24 +919,139 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* EDIT PRODUCT MODAL */}
       {editingProduct && (
         <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-stone-200 text-left">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-stone-200 text-left max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-stone-200">
-              <h3 className="font-serif text-lg font-bold text-stone-900">
-                Edit Product & Price
+              <h3 className="font-serif text-lg font-bold text-stone-900 flex items-center gap-2">
+                <span>Edit Product & Price</span>
+                <span className="text-xs font-normal text-stone-500 font-serif">
+                  (پروڈکٹ، تصویر اور قیمت میں ترمیم)
+                </span>
               </h3>
               <button
                 onClick={() => setEditingProduct(null)}
-                className="text-stone-400 hover:text-stone-700 cursor-pointer"
+                className="text-stone-400 hover:text-stone-700 cursor-pointer p-1 rounded-lg hover:bg-stone-100"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSaveProductEdit} className="space-y-4 text-xs">
+              {/* PRODUCT IMAGE UPLOAD & PREVIEW FIELD */}
+              <div className="bg-stone-50 p-3.5 rounded-xl border border-stone-200 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-stone-800 font-bold flex items-center gap-1.5">
+                    <ImageIcon className="w-4 h-4 text-[#D4AF37]" />
+                    <span>Product Image / پروڈکٹ کی تصویر:</span>
+                  </label>
+                  {editingProduct.image?.startsWith('data:image') && (
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-200">
+                      Custom Base64 Image ✓
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex gap-3.5 items-start">
+                  {/* Image Preview Thumbnail */}
+                  <div className="relative w-24 h-24 rounded-xl overflow-hidden bg-stone-200 border-2 border-[#D4AF37]/40 shrink-0 shadow-inner group">
+                    <img
+                      src={editingProduct.image || '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg'}
+                      alt={editingProduct.name}
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        e.currentTarget.src = '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
+                      }}
+                      className="w-full h-full object-cover"
+                    />
+                    {isUploadingEditImage && (
+                      <div className="absolute inset-0 bg-stone-900/80 backdrop-blur-2xs flex flex-col items-center justify-center text-white p-1 text-center">
+                        <RefreshCw className="w-4 h-4 animate-spin text-[#D4AF37] mb-1" />
+                        <span className="text-[9px] font-bold">Processing...</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Upload Controls & URL */}
+                  <div className="flex-1 space-y-2">
+                    <label className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#0A0A0A] hover:bg-[#1A1A1A] text-[#D4AF37] border border-[#D4AF37]/50 rounded-lg text-xs font-bold cursor-pointer transition-colors shadow-xs">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{isUploadingEditImage ? 'Processing...' : 'Upload Image / تصویر منتخب کریں'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={isUploadingEditImage}
+                        onChange={handleEditImageUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    <p className="text-[11px] text-stone-500 leading-tight">
+                      Choose any photo from your mobile or PC. Automatically converted to base64 & saved to database.
+                    </p>
+
+                    {/* Direct Image URL input */}
+                    <div>
+                      <span className="text-[10px] text-stone-600 font-semibold block mb-0.5">
+                        Image URL / یا تصویر کا ویب لنک:
+                      </span>
+                      <input
+                        type="text"
+                        value={editingProduct.image || ''}
+                        onChange={(e) =>
+                          setEditingProduct({ ...editingProduct, image: e.target.value })
+                        }
+                        placeholder="https://... or data:image/..."
+                        className="w-full p-1.5 text-[11px] bg-white border border-stone-300 rounded-md font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="pt-1 border-t border-stone-200/80 flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] text-stone-500 font-semibold">Quick Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditingProduct({
+                        ...editingProduct,
+                        image: '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg',
+                      })
+                    }
+                    className="px-2 py-0.5 text-[10px] bg-stone-200/70 hover:bg-stone-300 rounded text-stone-700 cursor-pointer"
+                  >
+                    🍯 Sidr Honey
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditingProduct({
+                        ...editingProduct,
+                        image: '/src/assets/images/product_spicy_mango_achar_1791803720039.jpg',
+                      })
+                    }
+                    className="px-2 py-0.5 text-[10px] bg-stone-200/70 hover:bg-stone-300 rounded text-stone-700 cursor-pointer"
+                  >
+                    🥭 Mango Achar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditingProduct({
+                        ...editingProduct,
+                        image: '/src/assets/images/product_lazeez_seb_murabba_1791803738733.jpg',
+                      })
+                    }
+                    className="px-2 py-0.5 text-[10px] bg-stone-200/70 hover:bg-stone-300 rounded text-stone-700 cursor-pointer"
+                  >
+                    🍎 Seb Murabba
+                  </button>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-stone-700 font-bold mb-1">Product Title:</label>
                 <input
                   type="text"
+                  required
                   value={editingProduct.name}
                   onChange={(e) =>
                     setEditingProduct({ ...editingProduct, name: e.target.value })
@@ -899,14 +1061,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
 
               <div>
-                <label className="block text-stone-700 font-bold mb-1">Urdu Title:</label>
+                <label className="block text-stone-700 font-bold mb-1">Urdu Title (اردو نام):</label>
                 <input
                   type="text"
                   value={editingProduct.urduName}
                   onChange={(e) =>
                     setEditingProduct({ ...editingProduct, urduName: e.target.value })
                   }
-                  className="w-full p-2 bg-stone-50 border border-stone-300 rounded-lg font-serif"
+                  className="w-full p-2 bg-stone-50 border border-stone-300 rounded-lg font-serif text-sm"
                 />
               </div>
 
@@ -917,6 +1079,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </label>
                   <input
                     type="number"
+                    required
                     value={editingProduct.price}
                     onChange={(e) =>
                       setEditingProduct({
@@ -939,10 +1102,44 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     }
                     className="w-full p-2 bg-stone-50 border border-stone-300 rounded-lg"
                   >
-                    <option value="honey">Pure Honey</option>
-                    <option value="achar">Chatpata Achar</option>
-                    <option value="murabba">Lazeez Murabbay</option>
+                    <option value="honey">Pure Honey (شہد)</option>
+                    <option value="achar">Chatpata Achar (اچار)</option>
+                    <option value="murabba">Lazeez Murabbay (مربہ)</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Status Toggles: Stock & Featured */}
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div className="flex items-center gap-2 p-2 bg-stone-50 border border-stone-200 rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="edit-in-stock"
+                    checked={editingProduct.inStock ?? true}
+                    onChange={(e) =>
+                      setEditingProduct({ ...editingProduct, inStock: e.target.checked })
+                    }
+                    className="w-4 h-4 text-emerald-600 rounded cursor-pointer"
+                  />
+                  <label htmlFor="edit-in-stock" className="text-xs font-semibold text-stone-800 cursor-pointer">
+                    In Stock (دستیاب ہے)
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-2 p-2 bg-stone-50 border border-stone-200 rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="edit-featured"
+                    checked={editingProduct.featured ?? false}
+                    onChange={(e) =>
+                      setEditingProduct({ ...editingProduct, featured: e.target.checked })
+                    }
+                    className="w-4 h-4 text-amber-500 rounded cursor-pointer"
+                  />
+                  <label htmlFor="edit-featured" className="text-xs font-semibold text-stone-800 flex items-center gap-1 cursor-pointer">
+                    <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+                    <span>Featured (خاص انتخاب)</span>
+                  </label>
                 </div>
               </div>
 
@@ -955,6 +1152,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <div key={i} className="flex gap-2">
                       <input
                         type="text"
+                        placeholder="Size (e.g. 500g)"
                         value={opt.weight}
                         onChange={(e) => {
                           const updated = [...editingProduct.weightOptions];
@@ -965,6 +1163,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       />
                       <input
                         type="number"
+                        placeholder="Price PKR"
                         value={opt.price}
                         onChange={(e) => {
                           const updated = [...editingProduct.weightOptions];
@@ -978,7 +1177,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
-              <div className="pt-2 flex justify-end gap-2">
+              <div>
+                <label className="block text-stone-700 font-bold mb-1">Short Description:</label>
+                <textarea
+                  rows={2}
+                  value={editingProduct.shortDesc || ''}
+                  onChange={(e) =>
+                    setEditingProduct({ ...editingProduct, shortDesc: e.target.value })
+                  }
+                  className="w-full p-2 bg-stone-50 border border-stone-300 rounded-lg"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2 border-t border-stone-200">
                 <button
                   type="button"
                   onClick={() => setEditingProduct(null)}
@@ -988,7 +1199,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-emerald-950 hover:bg-emerald-900 text-amber-200 font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer"
+                  className="px-4 py-2 bg-[#0A0A0A] hover:bg-[#1A1A1A] text-[#D4AF37] border border-[#D4AF37]/50 font-bold rounded-lg flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
                   <Save className="w-3.5 h-3.5" />
                   <span>Save Changes</span>
@@ -1002,20 +1213,131 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* CREATE NEW PRODUCT MODAL */}
       {isNewProductModalOpen && (
         <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-stone-200 text-left">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-stone-200 text-left max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-stone-200">
-              <h3 className="font-serif text-lg font-bold text-stone-900">
-                Add New Pantry Product
+              <h3 className="font-serif text-lg font-bold text-stone-900 flex items-center gap-2">
+                <span>Add New Pantry Product</span>
+                <span className="text-xs font-normal text-stone-500 font-serif">
+                  (نئی پروڈکٹ اور تصویر شامل کریں)
+                </span>
               </h3>
               <button
                 onClick={() => setIsNewProductModalOpen(false)}
-                className="text-stone-400 hover:text-stone-700 cursor-pointer"
+                className="text-stone-400 hover:text-stone-700 cursor-pointer p-1 rounded-lg hover:bg-stone-100"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleCreateProduct} className="space-y-4 text-xs">
+              {/* PRODUCT IMAGE UPLOAD & PREVIEW FIELD */}
+              <div className="bg-stone-50 p-3.5 rounded-xl border border-stone-200 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-stone-800 font-bold flex items-center gap-1.5">
+                    <ImageIcon className="w-4 h-4 text-[#D4AF37]" />
+                    <span>Product Image / پروڈکٹ کی تصویر:</span>
+                  </label>
+                  {newProd.image?.startsWith('data:image') && (
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-200">
+                      Uploaded Base64 ✓
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex gap-3.5 items-start">
+                  {/* Image Preview Thumbnail */}
+                  <div className="relative w-24 h-24 rounded-xl overflow-hidden bg-stone-200 border-2 border-[#D4AF37]/40 shrink-0 shadow-inner group">
+                    <img
+                      src={newProd.image || '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg'}
+                      alt="New Product"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        e.currentTarget.src = '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
+                      }}
+                      className="w-full h-full object-cover"
+                    />
+                    {isUploadingNewImage && (
+                      <div className="absolute inset-0 bg-stone-900/80 backdrop-blur-2xs flex flex-col items-center justify-center text-white p-1 text-center">
+                        <RefreshCw className="w-4 h-4 animate-spin text-[#D4AF37] mb-1" />
+                        <span className="text-[9px] font-bold">Processing...</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Upload Controls & URL */}
+                  <div className="flex-1 space-y-2">
+                    <label className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#0A0A0A] hover:bg-[#1A1A1A] text-[#D4AF37] border border-[#D4AF37]/50 rounded-lg text-xs font-bold cursor-pointer transition-colors shadow-xs">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{isUploadingNewImage ? 'Processing...' : 'Upload Image / تصویر منتخب کریں'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={isUploadingNewImage}
+                        onChange={handleNewImageUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    <p className="text-[11px] text-stone-500 leading-tight">
+                      Upload from phone or computer. Automatically converted to base64 for fast rendering.
+                    </p>
+
+                    <div>
+                      <span className="text-[10px] text-stone-600 font-semibold block mb-0.5">
+                        Image URL / یا تصویر کا لنک:
+                      </span>
+                      <input
+                        type="text"
+                        value={newProd.image || ''}
+                        onChange={(e) => setNewProd({ ...newProd, image: e.target.value })}
+                        placeholder="https://... or data:image/..."
+                        className="w-full p-1.5 text-[11px] bg-white border border-stone-300 rounded-md font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="pt-1 border-t border-stone-200/80 flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] text-stone-500 font-semibold">Quick Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setNewProd({
+                        ...newProd,
+                        image: '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg',
+                      })
+                    }
+                    className="px-2 py-0.5 text-[10px] bg-stone-200/70 hover:bg-stone-300 rounded text-stone-700 cursor-pointer"
+                  >
+                    🍯 Sidr Honey
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setNewProd({
+                        ...newProd,
+                        image: '/src/assets/images/product_spicy_mango_achar_1791803720039.jpg',
+                      })
+                    }
+                    className="px-2 py-0.5 text-[10px] bg-stone-200/70 hover:bg-stone-300 rounded text-stone-700 cursor-pointer"
+                  >
+                    🥭 Mango Achar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setNewProd({
+                        ...newProd,
+                        image: '/src/assets/images/product_lazeez_seb_murabba_1791803738733.jpg',
+                      })
+                    }
+                    className="px-2 py-0.5 text-[10px] bg-stone-200/70 hover:bg-stone-300 rounded text-stone-700 cursor-pointer"
+                  >
+                    🍎 Seb Murabba
+                  </button>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-stone-700 font-bold mb-1">
                   Product Name (e.g. Special Green Chilli Achar):
@@ -1037,7 +1359,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   type="text"
                   value={newProd.urduName}
                   onChange={(e) => setNewProd({ ...newProd, urduName: e.target.value })}
-                  className="w-full p-2 bg-stone-50 border border-stone-300 rounded-lg font-serif"
+                  className="w-full p-2 bg-stone-50 border border-stone-300 rounded-lg font-serif text-sm"
                 />
               </div>
 
@@ -1078,7 +1400,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 />
               </div>
 
-              <div className="pt-2 flex justify-end gap-2">
+              <div className="pt-2 flex justify-end gap-2 border-t border-stone-200">
                 <button
                   type="button"
                   onClick={() => setIsNewProductModalOpen(false)}
@@ -1088,7 +1410,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-emerald-950 hover:bg-emerald-900 text-amber-200 font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer"
+                  className="px-4 py-2 bg-[#0A0A0A] hover:bg-[#1A1A1A] text-[#D4AF37] border border-[#D4AF37]/50 font-bold rounded-lg flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Create Product</span>

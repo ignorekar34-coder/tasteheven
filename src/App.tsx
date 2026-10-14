@@ -170,12 +170,24 @@ export default function App() {
     };
   }, []);
 
-  // Persist products to localStorage
+  // Persist products to localStorage (with resilient quota handling)
   useEffect(() => {
     try {
       localStorage.setItem('taste_heven_products', JSON.stringify(products));
     } catch (e) {
-      console.error(e);
+      console.warn('localStorage full, applying fallback optimization:', e);
+      try {
+        const trimmed = products.map((p) => ({
+          ...p,
+          image:
+            p.image?.startsWith('data:') && p.image.length > 150000
+              ? '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg'
+              : p.image,
+        }));
+        localStorage.setItem('taste_heven_products', JSON.stringify(trimmed));
+      } catch {
+        // Safe failover
+      }
     }
   }, [products]);
 

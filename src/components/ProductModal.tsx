@@ -69,9 +69,12 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           {/* Product Image Column */}
           <div className="relative bg-stone-100 min-h-[300px] md:min-h-full">
             <img
-              src={product.image}
+              src={product.image || '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg'}
               alt={product.name}
               referrerPolicy="no-referrer"
+              onError={(e) => {
+                e.currentTarget.src = '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
+              }}
               className="w-full h-full object-cover object-center"
             />
             {/* Badges */}

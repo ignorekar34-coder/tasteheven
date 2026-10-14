@@ -47,11 +47,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Product Image in Rounded Container */}
       <div className="relative aspect-4/3 bg-stone-100 overflow-hidden m-2.5 rounded-[24px]">
         <img
-          src={product.image}
+          src={product.image || '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg'}
           alt={product.name}
           referrerPolicy="no-referrer"
           loading="lazy"
           decoding="async"
+          onError={(e) => {
+            e.currentTarget.src = '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
+          }}
           className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
         />
 
