@@ -30,8 +30,13 @@ import {
   Image as ImageIcon,
   Sparkles,
   RefreshCw,
+  Eye,
+  Check,
+  Layers,
 } from 'lucide-react';
 import { processImageFile } from '../../utils/imageUtils';
+import { PRODUCTS } from '../../data/products';
+import { DEFAULT_HERO_BANNER } from '../Hero';
 
 interface AdminDashboardProps {
   currentUser: AdminUser;
@@ -47,9 +52,11 @@ interface AdminDashboardProps {
   onClearAllOrders?: () => void;
   adminUsers: AdminUser[];
   onUpdateAdminUsers: (users: AdminUser[]) => void;
+  bannerImage?: string;
+  onUpdateBannerImage?: (newBanner: string) => void;
 }
 
-type AdminTab = 'overview' | 'orders' | 'products' | 'team';
+type AdminTab = 'overview' | 'orders' | 'products' | 'product-images' | 'banner-image' | 'team';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   currentUser,
@@ -65,12 +72,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onClearAllOrders,
   adminUsers,
   onUpdateAdminUsers,
+  bannerImage,
+  onUpdateBannerImage,
 }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [orderSearch, setOrderSearch] = useState('');
   const [orderFilter, setOrderFilter] = useState<string>('all');
   const [productSearch, setProductSearch] = useState('');
   const [productCatFilter, setProductCatFilter] = useState<string>('all');
+
 
   // Order Deletion / Purge Modal State
   const [orderToDelete, setOrderToDelete] = useState<OrderRecord | null>(null);
@@ -169,6 +179,88 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setIsUploadingNewImage(false);
       e.target.value = '';
     }
+  };
+
+  // Section 1: Edit Product Images State & Handlers
+  const [productImageCatFilter, setProductImageCatFilter] = useState<string>('all');
+  const [productImageSearch, setProductImageSearch] = useState('');
+  const [uploadingProductId, setUploadingProductId] = useState<string | null>(null);
+  const [savedProductImageId, setSavedProductImageId] = useState<string | null>(null);
+
+  const filteredImageProducts = products.filter((p) => {
+    const matchesCat = productImageCatFilter === 'all' || p.category === productImageCatFilter;
+    const matchesSearch =
+      productImageSearch === '' ||
+      p.name.toLowerCase().includes(productImageSearch.toLowerCase()) ||
+      p.urduName.includes(productImageSearch);
+    return matchesCat && matchesSearch;
+  });
+
+  const handleProductCardImageUpload = async (product: Product, file: File) => {
+    try {
+      setUploadingProductId(product.id);
+      const base64 = await processImageFile(file, 1000, 1000, 0.88);
+      onUpdateProduct({
+        ...product,
+        image: base64,
+      });
+      setSavedProductImageId(product.id);
+      setTimeout(() => setSavedProductImageId(null), 3500);
+    } catch (err: any) {
+      alert(err?.message || 'Failed to process image');
+    } finally {
+      setUploadingProductId(null);
+    }
+  };
+
+  const handleResetProductDefaultImage = (product: Product) => {
+    const defaultProduct = PRODUCTS.find((p) => p.id === product.id);
+    const originalImage = defaultProduct?.image || '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
+    onUpdateProduct({
+      ...product,
+      image: originalImage,
+    });
+    setSavedProductImageId(product.id);
+    setTimeout(() => setSavedProductImageId(null), 3500);
+  };
+
+  // Section 2: Edit Banner Image State & Handlers
+  const [bannerPreview, setBannerPreview] = useState<string>(bannerImage || DEFAULT_HERO_BANNER);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const [bannerSuccessNotice, setBannerSuccessNotice] = useState<string | null>(null);
+  const [bannerUrlDraft, setBannerUrlDraft] = useState('');
+
+  React.useEffect(() => {
+    if (bannerImage) {
+      setBannerPreview(bannerImage);
+    }
+  }, [bannerImage]);
+
+  const handleBannerFileUpload = async (file: File) => {
+    try {
+      setIsUploadingBanner(true);
+      const base64 = await processImageFile(file, 1600, 1000, 0.88);
+      setBannerPreview(base64);
+      setBannerSuccessNotice('Image processed! Click "Save & Apply to Homepage" below to apply it.');
+    } catch (err: any) {
+      alert(err?.message || 'Failed to process banner image');
+    } finally {
+      setIsUploadingBanner(false);
+    }
+  };
+
+  const handleSaveBanner = () => {
+    if (!bannerPreview) return;
+    onUpdateBannerImage?.(bannerPreview);
+    setBannerSuccessNotice('Homepage Hero Banner updated live! Check the homepage.');
+    setTimeout(() => setBannerSuccessNotice(null), 4000);
+  };
+
+  const handleResetDefaultBanner = () => {
+    setBannerPreview(DEFAULT_HERO_BANNER);
+    onUpdateBannerImage?.(DEFAULT_HERO_BANNER);
+    setBannerSuccessNotice('Original luxury hero banner restored and live on homepage!');
+    setTimeout(() => setBannerSuccessNotice(null), 4000);
   };
 
   // Handle Save Product Edit
@@ -342,6 +434,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </button>
 
           <button
+            onClick={() => setActiveTab('product-images')}
+            className={`flex items-center gap-2 py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'product-images'
+                ? 'border-[#D4AF37] text-[#D4AF37] bg-white/5'
+                : 'border-transparent text-stone-400 hover:text-white'
+            }`}
+          >
+            <ImageIcon className="w-4 h-4" />
+            <span>Edit Product Images</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('banner-image')}
+            className={`flex items-center gap-2 py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'banner-image'
+                ? 'border-[#D4AF37] text-[#D4AF37] bg-white/5'
+                : 'border-transparent text-stone-400 hover:text-white'
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Edit Banner Image</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('team')}
             className={`flex items-center gap-2 py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === 'team'
@@ -413,6 +529,45 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="text-[11px] text-emerald-700 mt-1">
                   Ahmad Waseem & Farman Ali
                 </div>
+              </div>
+            </div>
+
+            {/* Quick Actions: Edit Product Images & Edit Banner Image */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-gradient-to-r from-amber-50 to-stone-50 border border-amber-200/80 rounded-2xl p-5 shadow-2xs flex items-center justify-between gap-4 text-left">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
+                    <ImageIcon className="w-4 h-4 text-amber-700" />
+                    <span>Edit Product Images (تصاویر تبدیل کریں)</span>
+                  </div>
+                  <p className="text-xs text-stone-600">
+                    Update photos for Honey, Achar & Murabba jars with instant preview and auto base64 sync.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setActiveTab('product-images')}
+                  className="shrink-0 px-4 py-2 bg-stone-900 hover:bg-[#D4AF37] text-[#D4AF37] hover:text-stone-900 text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+                >
+                  Change Photos →
+                </button>
+              </div>
+
+              <div className="bg-gradient-to-r from-stone-900 to-stone-800 text-white border border-[#D4AF37]/40 rounded-2xl p-5 shadow-2xs flex items-center justify-between gap-4 text-left">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#D4AF37]">
+                    <Sparkles className="w-4 h-4 text-[#D4AF37]" />
+                    <span>Edit Banner Image (ہوم پیج بینر تبدیل کریں)</span>
+                  </div>
+                  <p className="text-xs text-stone-300">
+                    Upload a new hero banner showing your fresh honey jars on the homepage.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setActiveTab('banner-image')}
+                  className="shrink-0 px-4 py-2 bg-[#D4AF37] hover:bg-[#F9E498] text-[#0A0A0A] text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+                >
+                  Change Banner →
+                </button>
               </div>
             </div>
 
@@ -825,7 +980,411 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         )}
 
-        {/* TAB 4: STORE OWNERS */}
+        {/* TAB 3: EDIT PRODUCT IMAGES */}
+        {activeTab === 'product-images' && (
+          <div className="space-y-6 text-left">
+            {/* Header info */}
+            <div className="bg-gradient-to-r from-stone-900 to-stone-800 text-white rounded-3xl p-6 sm:p-8 border border-[#D4AF37]/40 shadow-md">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/50 text-xs font-bold text-[#D4AF37] mb-2">
+                    <ImageIcon className="w-3.5 h-3.5" />
+                    <span>Product Catalog Photos (پروڈکٹس کی تصاویر)</span>
+                  </div>
+                  <h2 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                    Edit Product Images — Honey, Achar & Murabba
+                  </h2>
+                  <p className="text-xs sm:text-sm text-stone-300 mt-1 max-w-2xl leading-relaxed">
+                    Upload new photos for any jar in your pantry. Images are automatically converted into optimized high-definition format, saved to Cloud Firestore & localStorage, and immediately updated live across the homepage and product pages.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 self-start md:self-auto">
+                  <button
+                    onClick={onReturnToStore}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    <Eye className="w-4 h-4 text-[#D4AF37]" />
+                    <span>View Live Store</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Category Pills & Search */}
+              <div className="mt-6 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+                  {[
+                    { id: 'all', label: 'All Products', count: products.length },
+                    { id: 'honey', label: 'Pure Honey (شہد)', count: products.filter((p) => p.category === 'honey').length },
+                    { id: 'achar', label: 'Desi Achar (اچار)', count: products.filter((p) => p.category === 'achar').length },
+                    { id: 'murabba', label: 'Lazeez Murabba (مربہ)', count: products.filter((p) => p.category === 'murabba').length },
+                  ].map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setProductImageCatFilter(cat.id)}
+                      className={`px-3.5 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                        productImageCatFilter === cat.id
+                          ? 'bg-[#D4AF37] text-[#0A0A0A] font-bold shadow-xs'
+                          : 'bg-white/10 text-stone-300 hover:bg-white/20'
+                      }`}
+                    >
+                      <span>{cat.label}</span>
+                      <span className="text-[10px] opacity-75 font-mono">({cat.count})</span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="relative w-full sm:w-64">
+                  <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    placeholder="Search product..."
+                    value={productImageSearch}
+                    onChange={(e) => setProductImageSearch(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 text-xs bg-stone-800/80 border border-stone-600 rounded-xl text-white placeholder-stone-400 focus:outline-none focus:border-[#D4AF37]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Notification alert if an image was updated */}
+            {savedProductImageId && (
+              <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 px-4 py-3 rounded-2xl flex items-center justify-between text-xs font-semibold shadow-xs">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-600" />
+                  <span>تصویر کامیابی سے تبدیل ہو گئی ہے! (Product photo successfully saved & live on homepage!)</span>
+                </div>
+                <button
+                  onClick={onReturnToStore}
+                  className="px-3 py-1 bg-emerald-800 text-white rounded-lg text-xs hover:bg-emerald-900 cursor-pointer font-bold"
+                >
+                  View on Homepage →
+                </button>
+              </div>
+            )}
+
+            {/* Product Cards Grid for Image Management */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredImageProducts.map((prod) => {
+                const isUploading = uploadingProductId === prod.id;
+
+                return (
+                  <div
+                    key={prod.id}
+                    className="bg-white rounded-3xl border border-stone-200 hover:border-[#D4AF37]/60 overflow-hidden shadow-2xs hover:shadow-md transition-all flex flex-col justify-between"
+                  >
+                    {/* Top details */}
+                    <div className="p-5 pb-3">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-stone-100 text-stone-700 border border-stone-200">
+                          {prod.category === 'honey'
+                            ? 'Pure Honey (شہد)'
+                            : prod.category === 'achar'
+                            ? 'Desi Achar (اچار)'
+                            : 'Murabba (مربہ)'}
+                        </span>
+                        <span className="text-xs font-serif font-bold text-stone-900">
+                          {formatPKR(prod.price)}
+                        </span>
+                      </div>
+
+                      <h3 className="font-serif font-bold text-stone-900 text-base leading-snug">
+                        {prod.name}
+                      </h3>
+                      <p className="text-xs font-serif text-[#D4AF37] font-semibold mt-0.5">
+                        {prod.urduName}
+                      </p>
+                    </div>
+
+                    {/* Image Preview Box */}
+                    <div className="px-5">
+                      <div className="relative aspect-4/3 w-full rounded-2xl overflow-hidden bg-stone-100 border border-stone-200 group">
+                        <img
+                          src={prod.image || '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg'}
+                          alt={prod.name}
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            e.currentTarget.src = '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
+                          }}
+                          className="w-full h-full object-cover object-center group-hover:scale-102 transition-transform duration-300"
+                        />
+                        {isUploading && (
+                          <div className="absolute inset-0 bg-stone-950/70 backdrop-blur-xs flex flex-col items-center justify-center text-white text-xs gap-2">
+                            <RefreshCw className="w-5 h-5 text-[#D4AF37] animate-spin" />
+                            <span>Processing Photo...</span>
+                          </div>
+                        )}
+                        <div className="absolute bottom-2 left-2 bg-[#0A0A0A]/80 backdrop-blur-xs text-white text-[10px] font-semibold px-2 py-0.5 rounded-md border border-white/20">
+                          Active Photo
+                        </div>
+                        {prod.image?.startsWith('data:') && (
+                          <div className="absolute top-2 right-2 bg-emerald-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-md shadow-xs">
+                            Custom Upload
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Actions & Upload Input */}
+                    <div className="p-5 pt-4 space-y-3">
+                      {/* Upload button wrapper with hidden file input */}
+                      <label className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-stone-900 hover:bg-stone-800 text-[#D4AF37] hover:text-white border border-[#D4AF37]/50 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer">
+                        <Upload className="w-4 h-4 text-[#D4AF37]" />
+                        <span>{isUploading ? 'Uploading...' : 'Upload New Photo'}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          disabled={isUploading}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleProductCardImageUpload(prod, file);
+                            }
+                            e.target.value = '';
+                          }}
+                          className="hidden"
+                        />
+                      </label>
+
+                      {/* Reset to default photo */}
+                      <div className="flex items-center justify-between text-[11px] pt-1 border-t border-stone-100">
+                        <button
+                          type="button"
+                          onClick={() => handleResetProductDefaultImage(prod)}
+                          className="text-stone-500 hover:text-amber-800 underline transition-colors cursor-pointer"
+                        >
+                          Reset original photo
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingProduct(prod)}
+                          className="text-stone-700 hover:text-emerald-900 font-semibold cursor-pointer flex items-center gap-1"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                          <span>Edit Details</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: EDIT BANNER IMAGE */}
+        {activeTab === 'banner-image' && (
+          <div className="space-y-6 text-left">
+            {/* Header info */}
+            <div className="bg-gradient-to-r from-stone-950 via-[#1A1A1A] to-stone-900 text-white rounded-3xl p-6 sm:p-8 border border-[#D4AF37]/40 shadow-lg">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/50 text-xs font-bold text-[#D4AF37] mb-2">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Hero Section Banner (ہوم پیج کا مین بینر)</span>
+                  </div>
+                  <h2 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                    Edit Banner / Hero Image
+                  </h2>
+                  <p className="text-xs sm:text-sm text-stone-300 mt-1 max-w-2xl leading-relaxed">
+                    Change the main banner showing honey jars on the homepage (Eat Fresh, Feel Heaven section). Upload a new banner image below, preview it instantly, and apply it live to the website.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 self-start md:self-auto">
+                  <button
+                    onClick={onReturnToStore}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    <Eye className="w-4 h-4 text-[#D4AF37]" />
+                    <span>View Live Homepage</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Notification alert */}
+            {bannerSuccessNotice && (
+              <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 px-4 py-3 rounded-2xl flex items-center justify-between text-xs font-semibold shadow-xs">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-600" />
+                  <span>{bannerSuccessNotice}</span>
+                </div>
+                <button
+                  onClick={onReturnToStore}
+                  className="px-3 py-1 bg-emerald-800 text-white rounded-lg text-xs hover:bg-emerald-900 cursor-pointer font-bold"
+                >
+                  Open Homepage to View →
+                </button>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Left Column: Upload Controls */}
+              <div className="lg:col-span-5 space-y-6">
+                {/* Upload Box */}
+                <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-2xs space-y-5">
+                  <div>
+                    <h3 className="font-serif text-lg font-bold text-stone-900">
+                      Upload New Banner Photo
+                    </h3>
+                    <p className="text-xs text-stone-500 mt-0.5">
+                      Recommended: High resolution landscape photo (16:9 or 16:10 aspect ratio, e.g. 1920x1080 or 1200x800).
+                    </p>
+                  </div>
+
+                  {/* Drag and Drop / Click Area */}
+                  <label className="border-2 border-dashed border-[#D4AF37]/60 hover:border-[#D4AF37] bg-stone-50/70 hover:bg-amber-50/30 rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all group">
+                    <div className="w-14 h-14 rounded-full bg-[#0A0A0A] text-[#D4AF37] flex items-center justify-center shadow-md mb-3 group-hover:scale-105 transition-transform">
+                      {isUploadingBanner ? (
+                        <RefreshCw className="w-6 h-6 animate-spin text-[#D4AF37]" />
+                      ) : (
+                        <Upload className="w-6 h-6" />
+                      )}
+                    </div>
+                    <span className="text-xs sm:text-sm font-bold text-stone-900 mb-1">
+                      {isUploadingBanner ? 'Processing image...' : 'Click to Upload New Banner'}
+                    </span>
+                    <span className="text-[11px] text-stone-500">
+                      Supports JPG, PNG, WebP (Auto-converted to base64)
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={isUploadingBanner}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleBannerFileUpload(file);
+                        e.target.value = '';
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+
+                  {/* Alternative URL Input */}
+                  <div className="space-y-1.5 pt-2 border-t border-stone-100">
+                    <label className="text-xs font-semibold text-stone-700 block">
+                      Or Paste Image URL (یا ویب تصویر کا لنک درج کریں):
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        placeholder="https://example.com/banner-jars.jpg"
+                        value={bannerUrlDraft}
+                        onChange={(e) => setBannerUrlDraft(e.target.value)}
+                        className="flex-1 px-3 py-2 text-xs bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:border-[#D4AF37]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (bannerUrlDraft.trim()) {
+                            setBannerPreview(bannerUrlDraft.trim());
+                            setBannerSuccessNotice('URL loaded! Click "Save & Apply to Homepage" below.');
+                          }
+                        }}
+                        className="px-3 py-2 bg-stone-900 text-[#D4AF37] hover:bg-[#D4AF37] hover:text-stone-900 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Primary Save & Reset Buttons */}
+                  <div className="pt-3 space-y-2.5">
+                    <button
+                      type="button"
+                      onClick={handleSaveBanner}
+                      className="w-full py-3.5 px-5 bg-gradient-to-r from-emerald-800 to-emerald-950 hover:from-emerald-700 hover:to-emerald-900 text-amber-100 font-bold text-xs sm:text-sm rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Save className="w-4 h-4 text-amber-400" />
+                      <span>Save & Apply to Homepage (محفوظ کریں اور ہوم پیج پر لگائیں)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleResetDefaultBanner}
+                      className="w-full py-2.5 px-4 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Restore Default Luxury Banner (اصلی بینر بحال کریں)</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Live Mockup of Homepage Hero Card */}
+              <div className="lg:col-span-7">
+                <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-2xs space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-serif text-lg font-bold text-stone-900">
+                        Live Homepage Hero Preview
+                      </h3>
+                      <p className="text-xs text-stone-500">
+                        This is how your banner appears to visitors on the Taste Heven homepage.
+                      </p>
+                    </div>
+                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      Live Preview
+                    </span>
+                  </div>
+
+                  {/* Hero Image Container Mockup */}
+                  <div className="relative rounded-[32px] overflow-hidden bg-stone-900 border border-[#0A0A0A]/10 shadow-xl aspect-16/10 group">
+                    <img
+                      src={bannerPreview || DEFAULT_HERO_BANNER}
+                      alt="Banner Preview"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        e.currentTarget.src = DEFAULT_HERO_BANNER;
+                      }}
+                      className="w-full h-full object-cover object-center"
+                    />
+
+                    {/* Measured contrast scrim */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+
+                    {/* Circular badge emblem mockup */}
+                    <div className="absolute top-4 right-4 z-10 drop-shadow-2xl">
+                      <TasteHevenLogo variant="badge" size={60} />
+                    </div>
+
+                    {/* Artisanal banner strip */}
+                    <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-xl border border-[#D4AF37]/40 p-3 sm:p-4 rounded-[20px] flex items-center justify-between shadow-lg">
+                      <div>
+                        <p className="text-xs font-bold text-[#0A0A0A]">
+                          Taste Heven Artisanal Pantry
+                        </p>
+                        <p className="text-[10px] text-stone-600 font-medium">
+                          Sanitized food-grade glass jars · Zero chemicals
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold text-[#0A0A0A] bg-stone-100 border border-[#D4AF37]/50 px-2.5 py-0.5 rounded-full">
+                          COD Pakistan
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-stone-50 rounded-2xl p-4 border border-stone-200 text-xs text-stone-600 flex items-center justify-between">
+                    <span>
+                      {bannerPreview.startsWith('data:')
+                        ? 'Custom uploaded image active in preview.'
+                        : 'Default luxury Taste Heven honey jars banner active.'}
+                    </span>
+                    <button
+                      onClick={onReturnToStore}
+                      className="text-emerald-800 font-bold hover:underline cursor-pointer"
+                    >
+                      Visit Live Storefront →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: STORE OWNERS */}
         {activeTab === 'team' && (
           <div className="space-y-6">
             <div className="bg-amber-50/80 p-5 rounded-2xl border border-amber-200/80">

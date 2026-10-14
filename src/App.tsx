@@ -9,7 +9,7 @@ import { Product, ProductCategory, CartItem, AdminUser, OrderRecord, OrderStatus
 import { PRODUCTS } from './data/products';
 import { INITIAL_ADMIN_USERS, INITIAL_ORDERS } from './data/adminUsers';
 import { Header } from './components/Header';
-import { Hero } from './components/Hero';
+import { Hero, DEFAULT_HERO_BANNER } from './components/Hero';
 import { Categories } from './components/Categories';
 import { ProductCard } from './components/ProductCard';
 import { ProductModal } from './components/ProductModal';
@@ -32,8 +32,11 @@ import {
   subscribeToProducts,
   saveProductToFirestore,
   deleteProductFromFirestore,
+  subscribeToBannerImage,
+  saveBannerImageToFirestore,
 } from './services/firebaseService';
 import { Sparkles, Search, RotateCcw, Shield, ArrowRight, CloudCheck } from 'lucide-react';
+
 
 export default function App() {
   // Load products with Firestore sync + localStorage persistence
@@ -114,6 +117,55 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
+  // Hero Banner image with Firestore sync + localStorage persistence
+  const [bannerImage, setBannerImage] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('taste_heven_banner_image');
+      return saved || DEFAULT_HERO_BANNER;
+    } catch {
+      return DEFAULT_HERO_BANNER;
+    }
+  });
+
+  // Open single product detail with history pushState so Back works
+  const handleOpenProduct = (prod: Product) => {
+    setSelectedProduct(prod);
+    try {
+      window.history.pushState({ modal: 'product', id: prod.id }, '', `#product-${prod.id}`);
+    } catch {}
+  };
+
+  // Close single product detail and clean up hash
+  const handleCloseProduct = () => {
+    setSelectedProduct(null);
+    try {
+      if (window.location.hash.startsWith('#product-')) {
+        window.history.pushState(null, '', window.location.pathname);
+      }
+    } catch {}
+  };
+
+  // Browser native back button listener to close product detail
+  useEffect(() => {
+    const handlePopState = () => {
+      if (selectedProduct) {
+        setSelectedProduct(null);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [selectedProduct]);
+
+  // Check URL hash on initial load or product list update
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.startsWith('#product-')) {
+      const pId = hash.replace('#product-', '');
+      const found = products.find((p) => p.id === pId);
+      if (found) setSelectedProduct(found);
+    }
+  }, [products]);
+
   // Toast feedback state
   const [toast, setToast] = useState<{
     visible: boolean;
@@ -157,16 +209,25 @@ export default function App() {
       setOrders(cloudOrders || []);
     });
 
-
     const unsubscribeProducts = subscribeToProducts((cloudProducts) => {
       if (cloudProducts && cloudProducts.length > 0) {
         setProducts(cloudProducts);
       }
     });
 
+    const unsubscribeBanner = subscribeToBannerImage((cloudBanner) => {
+      if (cloudBanner) {
+        setBannerImage(cloudBanner);
+        try {
+          localStorage.setItem('taste_heven_banner_image', cloudBanner);
+        } catch {}
+      }
+    });
+
     return () => {
       unsubscribeOrders();
       unsubscribeProducts();
+      unsubscribeBanner();
     };
   }, []);
 
@@ -458,6 +519,25 @@ export default function App() {
     setTimeout(() => setToast((t) => ({ ...t, visible: false })), 2500);
   };
 
+  // Banner image update -> sync to Firestore & localStorage
+  const handleUpdateBannerImage = async (newBanner: string) => {
+    setBannerImage(newBanner);
+    try {
+      localStorage.setItem('taste_heven_banner_image', newBanner);
+    } catch (e) {
+      console.warn('Banner localStorage warning:', e);
+    }
+    await saveBannerImageToFirestore(newBanner).catch((err) =>
+      console.error('Firestore saveBanner error:', err)
+    );
+    setToast({
+      visible: true,
+      message: 'Homepage Banner Updated Live',
+      subMessage: 'ہوم پیج کا مین بینر کامیابی سے محفوظ اور لائیو اپڈیٹ ہو چکا ہے۔',
+    });
+    setTimeout(() => setToast((t) => ({ ...t, visible: false })), 3000);
+  };
+
   const scrollToProducts = () => {
     const el = document.getElementById('products');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -481,6 +561,8 @@ export default function App() {
           onClearAllOrders={handleClearAllOrders}
           adminUsers={adminUsers}
           onUpdateAdminUsers={setAdminUsers}
+          bannerImage={bannerImage}
+          onUpdateBannerImage={handleUpdateBannerImage}
         />
         <Toast
           message={toast.message}
@@ -539,7 +621,7 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1">
         {/* 2. Taste Heaven Hero Banner */}
-        <Hero onExploreClick={scrollToProducts} />
+        <Hero onExploreClick={scrollToProducts} bannerImage={bannerImage} />
 
         {/* 3. Categories: Honey, Achar, Murabba */}
         <Categories
@@ -602,7 +684,7 @@ export default function App() {
                     onAddToCart={(prod, weight, price) =>
                       handleAddToCart(prod, weight, price, 1)
                     }
-                    onQuickView={(prod) => setSelectedProduct(prod)}
+                    onQuickView={handleOpenProduct}
                   />
                 ))}
               </div>
@@ -662,7 +744,7 @@ export default function App() {
       {/* Product Quick View Modal */}
       <ProductModal
         product={selectedProduct}
-        onClose={() => setSelectedProduct(null)}
+        onClose={handleCloseProduct}
         onAddToCart={handleAddToCart}
       />
 

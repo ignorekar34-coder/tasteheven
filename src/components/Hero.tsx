@@ -4,11 +4,16 @@ import { MessageCircle, ArrowRight, ShieldCheck, HeartHandshake, Sparkles, Truck
 import { generateGeneralInquiryWhatsAppUrl } from '../utils/whatsapp';
 import { TasteHevenLogo } from './TasteHevenLogo';
 
+export const DEFAULT_HERO_BANNER = '/src/assets/images/taste_heaven_hero_banner_1791803683564.jpg';
+
 interface HeroProps {
   onExploreClick: () => void;
+  bannerImage?: string;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onExploreClick }) => {
+export const Hero: React.FC<HeroProps> = ({ onExploreClick, bannerImage }) => {
+  const activeBanner = bannerImage || DEFAULT_HERO_BANNER;
+
   return (
     <section id="hero" className="relative bg-white overflow-hidden border-b border-[#0A0A0A]/10">
       {/* Subtle luxury ambient gold glow */}
@@ -123,11 +128,14 @@ export const Hero: React.FC<HeroProps> = ({ onExploreClick }) => {
           >
             <div className="relative rounded-[36px] overflow-hidden bg-white border border-[#0A0A0A]/10 shadow-xl aspect-4/3 sm:aspect-16/11 lg:aspect-4/3 group">
               <img
-                src="/src/assets/images/taste_heaven_hero_banner_1791803683564.jpg"
+                src={activeBanner}
                 alt="Taste Heven Pure Honey, Spicy Achar and Lazeez Murabba Jars"
                 referrerPolicy="no-referrer"
                 loading="lazy"
                 decoding="async"
+                onError={(e) => {
+                  e.currentTarget.src = DEFAULT_HERO_BANNER;
+                }}
                 className="w-full h-full object-cover object-center group-hover:scale-[1.03] transition-transform duration-700 ease-out"
               />
 

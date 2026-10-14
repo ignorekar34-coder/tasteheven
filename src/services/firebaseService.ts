@@ -190,3 +190,53 @@ export async function deleteProductFromFirestore(productId: string): Promise<voi
     handleFirestoreError(error, OperationType.DELETE, `${PRODUCTS_COLLECTION}/${productId}`);
   }
 }
+
+const SETTINGS_COLLECTION = 'settings';
+const HERO_BANNER_DOC = 'hero_banner';
+
+/**
+ * Real-time listener for Hero Banner Image
+ */
+export function subscribeToBannerImage(
+  onUpdate: (bannerUrl: string) => void,
+  onError?: (err: any) => void
+) {
+  try {
+    const docRef = doc(db, SETTINGS_COLLECTION, HERO_BANNER_DOC);
+    return onSnapshot(
+      docRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data && typeof data.bannerUrl === 'string' && data.bannerUrl) {
+            onUpdate(data.bannerUrl);
+          }
+        }
+      },
+      (error) => {
+        if (onError) onError(error);
+        // Soft failover, don't crash app if settings not seeded
+        console.warn('Banner subscription error:', error);
+      }
+    );
+  } catch (err) {
+    console.warn('Failed to subscribe to banner image:', err);
+    return () => {};
+  }
+}
+
+/**
+ * Save Hero Banner Image to Firestore
+ */
+export async function saveBannerImageToFirestore(bannerUrl: string): Promise<void> {
+  const docRef = doc(db, SETTINGS_COLLECTION, HERO_BANNER_DOC);
+  try {
+    await setDoc(docRef, {
+      bannerUrl,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `${SETTINGS_COLLECTION}/${HERO_BANNER_DOC}`);
+  }
+}
+

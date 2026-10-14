@@ -59,5 +59,11 @@ service cloud.firestore {
 
       allow delete: if isValidId(orderId);
     }
+
+    // Store settings (hero banner image, site config)
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isValidId(settingId);
+    }
   }
 }
