@@ -217,7 +217,7 @@ export const Footer: React.FC<FooterProps> = ({ onSelectCategory, onOpenAdmin })
               className="text-[#D4AF37] hover:text-[#F9E498] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
             >
               <Shield className="w-3 h-3" />
-              <span>Owners Portal (Ahmad Waseem & Farman Ali)</span>
+              <span>Owners Portal</span>
             </button>
           </div>
         </div>

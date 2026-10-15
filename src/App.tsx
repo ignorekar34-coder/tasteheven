@@ -695,19 +695,6 @@ export default function App() {
             <span>
               Logged in as <strong className="text-white">{currentAdmin.name}</strong> ({currentAdmin.role})
             </span>
-            <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-emerald-300 ml-2 bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-700">
-              <CloudCheck className="w-3 h-3 text-emerald-400" />
-              <span>Firebase Synced</span>
-            </span>
-            <button
-              onClick={handleManualSync}
-              disabled={isSyncing}
-              className="hidden md:inline-flex items-center gap-1 px-2.5 py-0.5 rounded bg-emerald-900 hover:bg-emerald-800 text-amber-200 text-[11px] font-semibold border border-emerald-700 cursor-pointer disabled:opacity-50 ml-1"
-              title="Sync latest images between phone & laptop"
-            >
-              <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span>{isSyncing ? 'Syncing...' : 'Sync Devices'}</span>
-            </button>
           </div>
           <button
             onClick={() => setViewMode('admin')}
@@ -734,8 +721,6 @@ export default function App() {
         onSelectCategory={setActiveCategory}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        onSync={handleManualSync}
-        isSyncing={isSyncing}
       />
 
       {/* Main Content Area */}

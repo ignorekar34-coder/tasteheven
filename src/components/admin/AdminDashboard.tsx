@@ -31,8 +31,10 @@ import {
   Sparkles,
   RefreshCw,
   Eye,
+  EyeOff,
   Check,
   Layers,
+  Scale,
 } from 'lucide-react';
 import { processImageFile, processBannerImageFile } from '../../utils/imageUtils';
 import { saveImageToIndexedDb, removeImageFromIndexedDb } from '../../utils/localImageDb';
@@ -109,6 +111,81 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     badge: 'New Arrival',
     inStock: true,
   });
+
+  const [newProdPrice1kg, setNewProdPrice1kg] = useState<number | ''>(2800);
+  const [newProdPrice250g, setNewProdPrice250g] = useState<number | ''>(850);
+
+  // Masked password map for team tab (default hidden for security)
+  const [showPasswordMap, setShowPasswordMap] = useState<Record<string, boolean>>({});
+
+  // Helper functions for editing product weight options (e.g. 1kg, 500g, 250g)
+  const getWeightPrice = (prod: Product, weightLabel: string): number | '' => {
+    if (!prod || !prod.weightOptions) return '';
+    const clean = weightLabel.toLowerCase().replace(/\s+/g, '');
+    const found = prod.weightOptions.find(
+      (w) => w.weight.toLowerCase().replace(/\s+/g, '') === clean
+    );
+    return found ? found.price : '';
+  };
+
+  const setWeightPrice = (weightLabel: string, price: number) => {
+    if (!editingProduct) return;
+    const cleanLabel = weightLabel.trim();
+    const cleanComp = cleanLabel.toLowerCase().replace(/\s+/g, '');
+    const existingIndex = editingProduct.weightOptions.findIndex(
+      (w) => w.weight.toLowerCase().replace(/\s+/g, '') === cleanComp
+    );
+
+    let nextOptions = [...editingProduct.weightOptions];
+    if (existingIndex > -1) {
+      nextOptions[existingIndex] = { ...nextOptions[existingIndex], price };
+    } else {
+      nextOptions.push({ weight: cleanLabel, price });
+    }
+
+    const sortWeight = (w: string) => {
+      const low = w.toLowerCase().replace(/\s+/g, '');
+      if (low.includes('250')) return 1;
+      if (low.includes('500')) return 2;
+      if (low.includes('1kg') || low.includes('1 kg')) return 3;
+      if (low.includes('2kg') || low.includes('2 kg')) return 4;
+      return 10;
+    };
+    nextOptions.sort((a, b) => sortWeight(a.weight) - sortWeight(b.weight));
+
+    const basePrice = cleanComp === '500g' ? price : editingProduct.price || price;
+
+    setEditingProduct({
+      ...editingProduct,
+      price: basePrice,
+      weightOptions: nextOptions,
+    });
+  };
+
+  const removeWeightOption = (index: number) => {
+    if (!editingProduct) return;
+    if (editingProduct.weightOptions.length <= 1) {
+      alert('کم از کم ایک وزن اور قیمت ہونا لازمی ہے۔ (Product must have at least one weight size)');
+      return;
+    }
+    const nextOptions = editingProduct.weightOptions.filter((_, i) => i !== index);
+    setEditingProduct({
+      ...editingProduct,
+      weightOptions: nextOptions,
+      price: nextOptions[0]?.price || editingProduct.price,
+    });
+  };
+
+  const addNewCustomWeight = () => {
+    if (!editingProduct) return;
+    const w = prompt('نیا سائز درج کریں (مثلاً 1kg یا 2kg یا 750g):', '1kg');
+    if (!w || !w.trim()) return;
+    const pStr = prompt(`${w.trim()} کی قیمت روپوں میں درج کریں:`, '3500');
+    if (!pStr) return;
+    const pNum = Number(pStr);
+    if (isNaN(pNum) || pNum <= 0) return;
+    setWeightPrice(w.trim(), pNum);
+  };
 
   // User edit password state
   const [passwordChangeUser, setPasswordChangeUser] = useState<AdminUser | null>(null);
@@ -299,8 +376,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       price: Number(newProd.price),
       weight: newProd.weight || '500g',
       weightOptions: [
+        {
+          weight: '250g',
+          price:
+            typeof newProdPrice250g === 'number' && newProdPrice250g > 0
+              ? newProdPrice250g
+              : Math.round(Number(newProd.price) * 0.55),
+        },
         { weight: '500g', price: Number(newProd.price) },
-        { weight: '1kg', price: Math.round(Number(newProd.price) * 1.85) },
+        {
+          weight: '1kg',
+          price:
+            typeof newProdPrice1kg === 'number' && newProdPrice1kg > 0
+              ? newProdPrice1kg
+              : Math.round(Number(newProd.price) * 1.85),
+        },
       ],
       rating: 5.0,
       reviewCount: 1,
@@ -327,6 +417,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       badge: 'New Arrival',
       inStock: true,
     });
+    setNewProdPrice1kg(2800);
+    setNewProdPrice250g(850);
   };
 
   // Handle Password Change
@@ -1521,8 +1613,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-stone-500">Password:</span>
-                        <span className="text-amber-800 font-bold bg-white px-2 py-0.5 rounded border border-stone-200">
-                          {user.password}
+                        <span className="text-stone-700 font-bold bg-white px-2.5 py-0.5 rounded border border-stone-200 tracking-widest font-mono text-xs select-none">
+                          ••••••••
                         </span>
                       </div>
                       {user.phone && (
@@ -1784,37 +1876,127 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
-              <div>
-                <label className="block text-stone-700 font-bold mb-1">
-                  Weight Sizes & Prices:
-                </label>
+              {/* WEIGHT SIZES & CUSTOM PRICES (E.G. 1KG, 500G, 250G) */}
+              <div className="bg-stone-50 p-3.5 rounded-xl border border-stone-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-stone-800 font-bold text-xs flex items-center gap-1.5">
+                      <Scale className="w-4 h-4 text-[#D4AF37]" />
+                      <span>Weight Sizes & Prices (سائز اور قیمت سیٹ کریں):</span>
+                    </label>
+                    <p className="text-[11px] text-stone-500 mt-0.5">
+                      1kg، 500g یا دیگر سائز کی قیمت یہاں مقرر کریں۔ کسٹمر پروڈکٹ کارڈ پر یہی سائز اور قیمت منتخب کر سکے گا۔
+                    </p>
+                  </div>
+                </div>
+
+                {/* List of current weight options */}
                 <div className="space-y-2">
                   {editingProduct.weightOptions.map((opt, i) => (
-                    <div key={i} className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Size (e.g. 500g)"
-                        value={opt.weight}
-                        onChange={(e) => {
-                          const updated = [...editingProduct.weightOptions];
-                          updated[i] = { ...updated[i], weight: e.target.value };
-                          setEditingProduct({ ...editingProduct, weightOptions: updated });
-                        }}
-                        className="w-1/2 p-2 bg-stone-50 border border-stone-300 rounded-lg"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Price PKR"
-                        value={opt.price}
-                        onChange={(e) => {
-                          const updated = [...editingProduct.weightOptions];
-                          updated[i] = { ...updated[i], price: Number(e.target.value) };
-                          setEditingProduct({ ...editingProduct, weightOptions: updated });
-                        }}
-                        className="w-1/2 p-2 bg-stone-50 border border-stone-300 rounded-lg"
-                      />
+                    <div key={i} className="flex items-center gap-2 bg-white p-2 rounded-lg border border-stone-200 shadow-2xs">
+                      <div className="w-1/3">
+                        <label className="text-[10px] text-stone-500 block font-semibold mb-0.5">وزن / سائز:</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. 1kg"
+                          value={opt.weight}
+                          onChange={(e) => {
+                            const updated = [...editingProduct.weightOptions];
+                            updated[i] = { ...updated[i], weight: e.target.value };
+                            setEditingProduct({ ...editingProduct, weightOptions: updated });
+                          }}
+                          className="w-full p-1.5 text-xs bg-stone-50 border border-stone-300 rounded font-bold text-stone-900"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-[10px] text-stone-500 block font-semibold mb-0.5">قیمت (Price in PKR):</label>
+                        <div className="relative">
+                          <span className="absolute left-2.5 top-1.5 text-stone-400 text-xs font-serif font-bold">₨</span>
+                          <input
+                            type="number"
+                            required
+                            min="1"
+                            placeholder="e.g. 2400"
+                            value={opt.price}
+                            onChange={(e) => {
+                              const updated = [...editingProduct.weightOptions];
+                              const newPrice = Number(e.target.value);
+                              updated[i] = { ...updated[i], price: newPrice };
+                              const base = (opt.weight.toLowerCase().includes('500') || i === 0) ? newPrice : editingProduct.price;
+                              setEditingProduct({ ...editingProduct, price: base, weightOptions: updated });
+                            }}
+                            className="w-full pl-7 pr-2 py-1.5 text-xs bg-stone-50 border border-stone-300 rounded font-bold text-stone-900 tabular-nums"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeWeightOption(i)}
+                        disabled={editingProduct.weightOptions.length <= 1}
+                        title="Delete this size option"
+                        className="p-1.5 text-stone-400 hover:text-red-600 disabled:opacity-30 disabled:hover:text-stone-400 rounded hover:bg-stone-100 cursor-pointer self-end mb-0.5"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   ))}
+                </div>
+
+                {/* Quick Add Buttons for 1kg, 500g, 250g, etc. */}
+                <div className="pt-2 border-t border-stone-200/80 flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] text-stone-600 font-bold">Quick Add:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const has1kg = editingProduct.weightOptions.some(w => w.weight.toLowerCase().replace(/\s+/g, '') === '1kg');
+                      if (has1kg) {
+                        alert('1kg آپشن پہلے سے موجود ہے، آپ اوپر اس کی قیمت تبدیل کر سکتے ہیں۔');
+                      } else {
+                        const estimated1kg = Math.round((editingProduct.price || 1000) * 1.85);
+                        setWeightPrice('1kg', estimated1kg);
+                      }
+                    }}
+                    className="px-2.5 py-1 text-[11px] font-bold bg-[#0A0A0A] hover:bg-[#1A1A1A] text-[#D4AF37] border border-[#D4AF37]/40 rounded-lg cursor-pointer transition-colors shadow-2xs"
+                  >
+                    + 1kg Option (1 کلو)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const has500g = editingProduct.weightOptions.some(w => w.weight.toLowerCase().replace(/\s+/g, '') === '500g');
+                      if (has500g) {
+                        alert('500g آپشن پہلے سے موجود ہے، آپ اوپر اس کی قیمت تبدیل کر سکتے ہیں۔');
+                      } else {
+                        setWeightPrice('500g', editingProduct.price || 1000);
+                      }
+                    }}
+                    className="px-2 py-1 text-[11px] bg-stone-200 hover:bg-stone-300 text-stone-800 font-semibold rounded-lg cursor-pointer"
+                  >
+                    + 500g
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const has250g = editingProduct.weightOptions.some(w => w.weight.toLowerCase().replace(/\s+/g, '') === '250g');
+                      if (has250g) {
+                        alert('250g آپشن پہلے سے موجود ہے، آپ اوپر اس کی قیمت تبدیل کر سکتے ہیں۔');
+                      } else {
+                        const estimated250g = Math.round((editingProduct.price || 1000) * 0.55);
+                        setWeightPrice('250g', estimated250g);
+                      }
+                    }}
+                    className="px-2 py-1 text-[11px] bg-stone-200 hover:bg-stone-300 text-stone-800 font-semibold rounded-lg cursor-pointer"
+                  >
+                    + 250g
+                  </button>
+                  <button
+                    type="button"
+                    onClick={addNewCustomWeight}
+                    className="px-2 py-1 text-[11px] bg-white border border-stone-300 hover:bg-stone-100 text-stone-700 font-semibold rounded-lg cursor-pointer ml-auto"
+                  >
+                    + Custom Size...
+                  </button>
                 </div>
               </div>
 
@@ -2008,27 +2190,79 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-stone-700 font-bold mb-1">
-                    Price in PKR:
+                    Base Price (500g PKR) / بنیادی قیمت:
                   </label>
                   <input
                     type="number"
                     required
+                    min="1"
                     value={newProd.price}
-                    onChange={(e) => setNewProd({ ...newProd, price: Number(e.target.value) })}
-                    className="w-full p-2 bg-stone-50 border border-stone-300 rounded-lg"
+                    onChange={(e) => {
+                      const base = Number(e.target.value);
+                      setNewProd({ ...newProd, price: base });
+                      if (!newProdPrice1kg || newProdPrice1kg === 2800) {
+                        setNewProdPrice1kg(Math.round(base * 1.85));
+                      }
+                      if (!newProdPrice250g || newProdPrice250g === 850) {
+                        setNewProdPrice250g(Math.round(base * 0.55));
+                      }
+                    }}
+                    className="w-full p-2 bg-stone-50 border border-stone-300 rounded-lg text-xs font-bold font-mono"
                   />
                 </div>
                 <div>
-                  <label className="block text-stone-700 font-bold mb-1">Category:</label>
+                  <label className="block text-stone-700 font-bold mb-1">Category (کیٹیگری):</label>
                   <select
                     value={newProd.category}
                     onChange={(e) => setNewProd({ ...newProd, category: e.target.value as any })}
-                    className="w-full p-2 bg-stone-50 border border-stone-300 rounded-lg"
+                    className="w-full p-2 bg-stone-50 border border-stone-300 rounded-lg text-xs"
                   >
                     <option value="honey">Pure Honey (شہد)</option>
                     <option value="achar">Chatpata Achar (اچار)</option>
                     <option value="murabba">Lazeez Murabbay (مربہ)</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Specific Weight Prices: 1kg and 250g options */}
+              <div className="bg-stone-50 p-3 rounded-xl border border-stone-200 space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-stone-800">
+                  <Scale className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  <span>Set 1kg & 250g Prices (1 کلو اور 250 گرام کی قیمت سیٹ کریں):</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-stone-600 font-semibold text-[11px] mb-1">
+                      1kg Price (1 کلو قیمت PKR):
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-2 text-stone-400 text-xs font-serif font-bold">₨</span>
+                      <input
+                        type="number"
+                        min="1"
+                        placeholder="e.g. 2800"
+                        value={newProdPrice1kg}
+                        onChange={(e) => setNewProdPrice1kg(e.target.value === '' ? '' : Number(e.target.value))}
+                        className="w-full pl-7 pr-2 py-1.5 bg-white border border-stone-300 rounded-lg text-xs font-bold font-mono"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-stone-600 font-semibold text-[11px] mb-1">
+                      250g Price (250 گرام قیمت PKR):
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-2 text-stone-400 text-xs font-serif font-bold">₨</span>
+                      <input
+                        type="number"
+                        min="1"
+                        placeholder="e.g. 850"
+                        value={newProdPrice250g}
+                        onChange={(e) => setNewProdPrice250g(e.target.value === '' ? '' : Number(e.target.value))}
+                        className="w-full pl-7 pr-2 py-1.5 bg-white border border-stone-300 rounded-lg text-xs font-bold font-mono"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
