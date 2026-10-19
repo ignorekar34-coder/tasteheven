@@ -81,3 +81,41 @@ export async function processImageFile(
 export async function processBannerImageFile(file: File): Promise<string> {
   return processImageFile(file, 800, 500, 0.75);
 }
+
+/**
+ * Dedicated compression for category card banner images
+ * Accepts JPG, PNG, WEBP, max 2MB, recommended size 600x400
+ */
+export async function processCategoryBannerFile(file: File): Promise<string> {
+  // Validate max 2MB (2 * 1024 * 1024 bytes)
+  if (file.size > 2 * 1024 * 1024) {
+    throw new Error('تصویر کا سائز 2MB سے زیادہ نہیں ہو سکتا (Max image file size is 2MB)');
+  }
+
+  // Validate allowed format (JPG, PNG, WEBP)
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  if (!allowedTypes.includes(file.type.toLowerCase())) {
+    throw new Error('صرف JPG، PNG یا WEBP فارمیٹ کی تصویر منتخب کریں (Only JPG, PNG, or WEBP allowed)');
+  }
+
+  // Compress & resize to 600x400
+  return processImageFile(file, 600, 400, 0.82);
+}
+
+/**
+ * Dedicated compression for Pure Raw Ingredients craftsmanship banner (Why Choose Us)
+ * Accepts JPG, PNG, WEBP, max 2MB, recommended size 800x800 or 800x600
+ */
+export async function processRawIngredientsBannerFile(file: File): Promise<string> {
+  if (file.size > 2 * 1024 * 1024) {
+    throw new Error('تصویر کا سائز 2MB سے زیادہ نہیں ہو سکتا (Max image file size is 2MB)');
+  }
+
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  if (!allowedTypes.includes(file.type.toLowerCase())) {
+    throw new Error('صرف JPG، PNG یا WEBP فارمیٹ کی تصویر منتخب کریں (Only JPG, PNG, or WEBP allowed)');
+  }
+
+  // Optimized for crisp square/4:3 display in WhyChooseUs craftsmanship card
+  return processImageFile(file, 800, 800, 0.80);
+}

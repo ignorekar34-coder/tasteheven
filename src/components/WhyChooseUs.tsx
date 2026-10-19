@@ -2,7 +2,14 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { ShieldCheck, Sparkles, PackageCheck, Truck, Award, CheckCircle } from 'lucide-react';
 
-export const WhyChooseUs: React.FC = () => {
+export const DEFAULT_RAW_INGREDIENTS_BANNER = '/src/assets/images/why_choose_us_organic_craft_1791803752526.jpg';
+
+interface WhyChooseUsProps {
+  bannerImage?: string;
+}
+
+export const WhyChooseUs: React.FC<WhyChooseUsProps> = ({ bannerImage }) => {
+  const activeBanner = bannerImage || DEFAULT_RAW_INGREDIENTS_BANNER;
   const pillars = [
     {
       icon: ShieldCheck,
@@ -69,11 +76,16 @@ export const WhyChooseUs: React.FC = () => {
           >
             <div className="relative rounded-[32px] overflow-hidden bg-white border border-[#0A0A0A]/10 shadow-lg aspect-4/3 lg:aspect-square group">
               <img
-                src="/src/assets/images/why_choose_us_organic_craft_1791803752526.jpg"
+                key={activeBanner}
+                src={activeBanner}
                 alt="Raw authentic spices, wild honeycomb and traditional preparation at Taste Heven"
                 referrerPolicy="no-referrer"
                 loading="lazy"
                 decoding="async"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = DEFAULT_RAW_INGREDIENTS_BANNER;
+                }}
                 className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700 ease-out"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent flex flex-col justify-end p-7 text-left">

@@ -5,15 +5,16 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Lenis from 'lenis';
-import { Product, ProductCategory, CartItem, AdminUser, OrderRecord, OrderStatus } from './types';
+import { Product, ProductCategory, CartItem, AdminUser, OrderRecord, OrderStatus, CategoryConfig } from './types';
 import { PRODUCTS } from './data/products';
+import { DEFAULT_CATEGORIES } from './data/categories';
 import { INITIAL_ADMIN_USERS, INITIAL_ORDERS } from './data/adminUsers';
 import { Header } from './components/Header';
 import { Hero, DEFAULT_HERO_BANNER } from './components/Hero';
 import { Categories } from './components/Categories';
 import { ProductCard } from './components/ProductCard';
 import { ProductModal } from './components/ProductModal';
-import { WhyChooseUs } from './components/WhyChooseUs';
+import { WhyChooseUs, DEFAULT_RAW_INGREDIENTS_BANNER } from './components/WhyChooseUs';
 import { Reviews } from './components/Reviews';
 import { CartDrawer } from './components/CartDrawer';
 import { Footer } from './components/Footer';
@@ -36,6 +37,12 @@ import {
   saveBannerImageToFirestore,
   fetchProductsFromFirestore,
   fetchBannerFromFirestore,
+  subscribeToCategories,
+  saveCategoriesToFirestore,
+  fetchCategoriesFromFirestore,
+  subscribeToRawIngredientsBanner,
+  saveRawIngredientsBannerToFirestore,
+  fetchRawIngredientsBannerFromFirestore,
 } from './services/firebaseService';
 import { Sparkles, Search, RotateCcw, Shield, ArrowRight, CloudCheck, RefreshCw } from 'lucide-react';
 
@@ -133,6 +140,30 @@ export default function App() {
       return saved || DEFAULT_HERO_BANNER;
     } catch {
       return DEFAULT_HERO_BANNER;
+    }
+  });
+
+  // Categories configuration (order, banner image, titles)
+  const [categories, setCategories] = useState<CategoryConfig[]>(() => {
+    try {
+      const saved = localStorage.getItem('taste_heven_categories');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch {}
+    return DEFAULT_CATEGORIES;
+  });
+
+  // Pure Raw Ingredients banner image (The Taste Heven Promise section)
+  const [rawIngredientsBanner, setRawIngredientsBanner] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('taste_heven_raw_ingredients_banner');
+      return saved || DEFAULT_RAW_INGREDIENTS_BANNER;
+    } catch {
+      return DEFAULT_RAW_INGREDIENTS_BANNER;
     }
   });
 
@@ -268,10 +299,36 @@ export default function App() {
       }
     });
 
+    const unsubscribeCategories = subscribeToCategories((cloudCats) => {
+      if (cloudCats && cloudCats.length > 0) {
+        setCategories(cloudCats);
+        try {
+          localStorage.setItem('taste_heven_categories', JSON.stringify(cloudCats));
+        } catch (e) {
+          console.warn('categories localStorage warning:', e);
+        }
+        setForceRefreshKey((k) => k + 1);
+      }
+    });
+
+    const unsubscribeRawIngredients = subscribeToRawIngredientsBanner((cloudBanner) => {
+      if (cloudBanner) {
+        setRawIngredientsBanner(cloudBanner);
+        try {
+          localStorage.setItem('taste_heven_raw_ingredients_banner', cloudBanner);
+        } catch (e) {
+          console.warn('raw ingredients banner localStorage warning:', e);
+        }
+        setForceRefreshKey((k) => k + 1);
+      }
+    });
+
     return () => {
       unsubscribeOrders();
       unsubscribeProducts();
       unsubscribeBanner();
+      unsubscribeCategories();
+      unsubscribeRawIngredients();
     };
   }, []);
 
@@ -466,9 +523,11 @@ export default function App() {
   const handleManualSync = async () => {
     setIsSyncing(true);
     try {
-      const [cloudProds, cloudBanner] = await Promise.all([
+      const [cloudProds, cloudBanner, cloudCats, cloudRawBanner] = await Promise.all([
         fetchProductsFromFirestore(),
         fetchBannerFromFirestore(),
+        fetchCategoriesFromFirestore(),
+        fetchRawIngredientsBannerFromFirestore(),
       ]);
 
       if (cloudProds && cloudProds.length > 0) {
@@ -489,11 +548,29 @@ export default function App() {
         }
       }
 
+      if (cloudCats && cloudCats.length > 0) {
+        setCategories(cloudCats);
+        try {
+          localStorage.setItem('taste_heven_categories', JSON.stringify(cloudCats));
+        } catch (e) {
+          console.warn('Categories localStorage warning:', e);
+        }
+      }
+
+      if (cloudRawBanner) {
+        setRawIngredientsBanner(cloudRawBanner);
+        try {
+          localStorage.setItem('taste_heven_raw_ingredients_banner', cloudRawBanner);
+        } catch (e) {
+          console.warn('Raw ingredients banner localStorage warning:', e);
+        }
+      }
+
       setForceRefreshKey((k) => k + 1);
       setToast({
         visible: true,
         message: 'Sync Complete Across Devices',
-        subMessage: 'تمام پروڈکٹس اور ہوم پیج بینر کلاؤڈ اور فون کے ساتھ سنک ہو چکے ہیں۔',
+        subMessage: 'تمام پروڈکٹس، کیٹیگریز اور بینر تصاویر کلاؤڈ اور فون کے ساتھ سنک ہو چکی ہیں۔',
       });
       setTimeout(() => setToast((t) => ({ ...t, visible: false })), 3000);
     } catch (err: any) {
@@ -637,6 +714,48 @@ export default function App() {
     setTimeout(() => setToast((t) => ({ ...t, visible: false })), 3000);
   };
 
+  // Categories update (Banner images & Display Order: Chatpata Achar #1, Lazeez Murabbay #2, Pure Honey #3)
+  const handleUpdateCategories = async (newCategories: CategoryConfig[]) => {
+    setCategories(newCategories);
+    try {
+      localStorage.setItem('taste_heven_categories', JSON.stringify(newCategories));
+    } catch (e) {
+      console.warn('Categories localStorage warning:', e);
+    }
+    setForceRefreshKey((k) => k + 1);
+
+    await saveCategoriesToFirestore(newCategories).catch((err) =>
+      console.error('Firestore saveCategories error:', err)
+    );
+    setToast({
+      visible: true,
+      message: 'Categories & Banners Updated Live',
+      subMessage: 'کیٹیگری کارڈز کا آرڈر اور بینر تصاویر ہوم پیج پر لائیو اپڈیٹ ہو چکی ہیں۔',
+    });
+    setTimeout(() => setToast((t) => ({ ...t, visible: false })), 3000);
+  };
+
+  // Pure Raw Ingredients banner update -> sync to Firestore & localStorage, update state & DOM immediately
+  const handleUpdateRawIngredientsBanner = async (newBanner: string) => {
+    setRawIngredientsBanner(newBanner);
+    try {
+      localStorage.setItem('taste_heven_raw_ingredients_banner', newBanner);
+    } catch (e) {
+      console.warn('Raw ingredients banner localStorage warning:', e);
+    }
+    setForceRefreshKey((k) => k + 1);
+
+    await saveRawIngredientsBannerToFirestore(newBanner).catch((err) =>
+      console.error('Firestore saveRawIngredientsBanner error:', err)
+    );
+    setToast({
+      visible: true,
+      message: 'Raw Ingredients Banner Updated Live',
+      subMessage: 'خالص قدرتی اجزاء والا بینر کامیابی سے محفوظ اور لائیو اپڈیٹ ہو چکا ہے۔',
+    });
+    setTimeout(() => setToast((t) => ({ ...t, visible: false })), 3000);
+  };
+
   const scrollToProducts = () => {
     const el = document.getElementById('products');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -670,6 +789,10 @@ export default function App() {
           onUpdateAdminUsers={setAdminUsers}
           bannerImage={bannerImage}
           onUpdateBannerImage={handleUpdateBannerImage}
+          rawIngredientsBanner={rawIngredientsBanner}
+          onUpdateRawIngredientsBanner={handleUpdateRawIngredientsBanner}
+          categories={categories}
+          onUpdateCategories={handleUpdateCategories}
           onManualSync={handleManualSync}
           isSyncing={isSyncing}
         />
@@ -732,11 +855,13 @@ export default function App() {
           bannerImage={bannerImage}
         />
 
-        {/* 3. Categories: Honey, Achar, Murabba */}
+        {/* 3. Core Pantry Categories: Chatpata Achar (#1), Lazeez Murabbay (#2), Pure Honey (#3) */}
         <Categories
+          key={`home-categories-${forceRefreshKey}-${categories.map((c) => `${c.id}:${c.displayOrder}`).join('-')}`}
           activeCategory={activeCategory}
           onSelectCategory={setActiveCategory}
           counts={categoryCounts}
+          categories={categories}
         />
 
         {/* 4. Featured Products Section */}
@@ -820,8 +945,11 @@ export default function App() {
           </div>
         </section>
 
-        {/* 5. Why Choose Us */}
-        <WhyChooseUs />
+        {/* 5. Why Choose Us (Pure Raw Ingredients Craftsmanship Section) */}
+        <WhyChooseUs
+          key={`why-choose-us-${forceRefreshKey}-${rawIngredientsBanner ? rawIngredientsBanner.slice(-15) : 'default'}`}
+          bannerImage={rawIngredientsBanner}
+        />
 
         {/* 6. Reviews */}
         <Reviews />

@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { ProductCategory } from '../types';
+import { ProductCategory, CategoryConfig } from '../types';
+import { DEFAULT_CATEGORIES } from '../data/categories';
 import { Sparkles, ArrowRight } from 'lucide-react';
 
 interface CategoriesProps {
@@ -13,45 +14,21 @@ interface CategoriesProps {
     murabba: number;
     featured?: number;
   };
+  categories?: CategoryConfig[];
 }
 
 export const Categories: React.FC<CategoriesProps> = ({
   activeCategory,
   onSelectCategory,
   counts,
+  categories,
 }) => {
-  const categoriesList = [
-    {
-      id: 'honey' as ProductCategory,
-      title: 'Pure Honey',
-      urduTitle: 'خالص قدرتی شہد',
-      tagline: '100% Raw Sidr & Blossom Nectar',
-      image: '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg',
-      count: counts.honey,
-      color: 'from-amber-600/10 to-amber-700/5',
-      badgeColor: 'text-amber-800 bg-amber-50 border-amber-200',
-    },
-    {
-      id: 'achar' as ProductCategory,
-      title: 'Chatpata Achar',
-      urduTitle: 'اصلی سرسوں کا چٹپٹا اچار',
-      tagline: 'Sun-cured in pure mustard oil',
-      image: '/src/assets/images/product_spicy_mango_achar_1791803720039.jpg',
-      count: counts.achar,
-      color: 'from-red-600/10 to-amber-700/5',
-      badgeColor: 'text-red-800 bg-red-50 border-red-200',
-    },
-    {
-      id: 'murabba' as ProductCategory,
-      title: 'Lazeez Murabbay',
-      urduTitle: 'شاہی لذیذ مربہ جات',
-      tagline: 'Cardamom & Saffron infused preserves',
-      image: '/src/assets/images/product_lazeez_seb_murabba_1791803738733.jpg',
-      count: counts.murabba,
-      color: 'from-emerald-600/10 to-amber-700/5',
-      badgeColor: 'text-emerald-800 bg-emerald-50 border-emerald-200',
-    },
-  ];
+  const activeConfigs = categories && categories.length > 0 ? categories : DEFAULT_CATEGORIES;
+
+  // Sort categories by Display Order (1, 2, 3 - Chatpata Achar first, then Lazeez Murabbay, then Pure Honey)
+  const sortedCategories = [...activeConfigs].sort(
+    (a, b) => (Number(a.displayOrder) || 99) - (Number(b.displayOrder) || 99)
+  );
 
   return (
     <section className="py-16 bg-[#FAFAFA] border-b border-[#0A0A0A]/10">
@@ -75,10 +52,13 @@ export const Categories: React.FC<CategoriesProps> = ({
           </p>
         </div>
 
-        {/* 3 Spotlight Cards with rounded-[32px] */}
+        {/* 3 Spotlight Cards with rounded-[32px] ordered by displayOrder */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          {categoriesList.map((cat, i) => {
+          {sortedCategories.map((cat, i) => {
             const isSelected = activeCategory === cat.id;
+            const categoryCount = counts[cat.id] ?? 0;
+            const cardImg = cat.bannerImage || cat.defaultImage;
+
             return (
               <motion.button
                 key={cat.id}
@@ -101,7 +81,7 @@ export const Categories: React.FC<CategoriesProps> = ({
                 <div className="relative z-10 flex items-start justify-between gap-4">
                   <div>
                     <span className="inline-block text-[11px] font-bold px-3 py-1 rounded-full border mb-3 text-[#0A0A0A] bg-stone-50 border-[#D4AF37]/40">
-                      {cat.count} Available
+                      {categoryCount} Available
                     </span>
                     <h3 className="font-serif text-2xl sm:text-3xl font-bold text-[#0A0A0A] group-hover:text-[#D4AF37] transition-colors">
                       {cat.title}
@@ -116,10 +96,15 @@ export const Categories: React.FC<CategoriesProps> = ({
 
                   <div className="w-24 h-24 rounded-[22px] overflow-hidden bg-stone-100 shrink-0 border border-[#D4AF37]/30 shadow-xs">
                     <img
-                      src={cat.image}
+                      key={cardImg}
+                      src={cardImg}
                       alt={cat.title}
                       referrerPolicy="no-referrer"
                       loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        if (cat.defaultImage) e.currentTarget.src = cat.defaultImage;
+                      }}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
@@ -138,7 +123,7 @@ export const Categories: React.FC<CategoriesProps> = ({
 
         {/* Filter Segmented Pill Control in Luxury Black & Gold Style */}
         <div className="flex items-center justify-center">
-          <div className="inline-flex p-1.5 bg-stone-100 rounded-full border border-[#0A0A0A]/10 shadow-2xs">
+          <div className="inline-flex p-1.5 bg-stone-100 rounded-full border border-[#0A0A0A]/10 shadow-2xs flex-wrap justify-center gap-1">
             <button
               onClick={() => onSelectCategory('all')}
               className={`px-5 py-2.5 text-xs sm:text-sm font-bold rounded-full transition-all cursor-pointer ${
@@ -160,36 +145,20 @@ export const Categories: React.FC<CategoriesProps> = ({
               <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
               <span>⭐ Featured ({counts.featured ?? 0})</span>
             </button>
-            <button
-              onClick={() => onSelectCategory('honey')}
-              className={`px-5 py-2.5 text-xs sm:text-sm font-bold rounded-full transition-all cursor-pointer ${
-                activeCategory === 'honey'
-                  ? 'bg-[#0A0A0A] text-[#D4AF37] shadow-sm border border-[#D4AF37]/50'
-                  : 'text-[#0A0A0A] hover:text-[#D4AF37]'
-              }`}
-            >
-              Pure Honey ({counts.honey})
-            </button>
-            <button
-              onClick={() => onSelectCategory('achar')}
-              className={`px-5 py-2.5 text-xs sm:text-sm font-bold rounded-full transition-all cursor-pointer ${
-                activeCategory === 'achar'
-                  ? 'bg-[#0A0A0A] text-[#D4AF37] shadow-sm border border-[#D4AF37]/50'
-                  : 'text-[#0A0A0A] hover:text-[#D4AF37]'
-              }`}
-            >
-              Chatpata Achar ({counts.achar})
-            </button>
-            <button
-              onClick={() => onSelectCategory('murabba')}
-              className={`px-5 py-2.5 text-xs sm:text-sm font-bold rounded-full transition-all cursor-pointer ${
-                activeCategory === 'murabba'
-                  ? 'bg-[#0A0A0A] text-[#D4AF37] shadow-sm border border-[#D4AF37]/50'
-                  : 'text-[#0A0A0A] hover:text-[#D4AF37]'
-              }`}
-            >
-              Lazeez Murabbay ({counts.murabba})
-            </button>
+
+            {sortedCategories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => onSelectCategory(cat.id)}
+                className={`px-5 py-2.5 text-xs sm:text-sm font-bold rounded-full transition-all cursor-pointer ${
+                  activeCategory === cat.id
+                    ? 'bg-[#0A0A0A] text-[#D4AF37] shadow-sm border border-[#D4AF37]/50'
+                    : 'text-[#0A0A0A] hover:text-[#D4AF37]'
+                }`}
+              >
+                {cat.title} ({counts[cat.id] ?? 0})
+              </button>
+            ))}
           </div>
         </div>
       </div>

@@ -11,7 +11,7 @@ import {
   orderBy,
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { OrderRecord, Product, OrderStatus } from '../types';
+import { OrderRecord, Product, OrderStatus, CategoryConfig } from '../types';
 import { PRODUCTS } from '../data/products';
 import { INITIAL_ORDERS } from '../data/adminUsers';
 
@@ -242,6 +242,7 @@ export async function fetchBannerFromFirestore(): Promise<string | null> {
 
 const SETTINGS_COLLECTION = 'settings';
 const HERO_BANNER_DOC = 'hero_banner';
+const RAW_INGREDIENTS_BANNER_DOC = 'raw_ingredients_banner';
 
 /**
  * Real-time listener for Hero Banner Image
@@ -286,6 +287,136 @@ export async function saveBannerImageToFirestore(bannerUrl: string): Promise<voi
     });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `${SETTINGS_COLLECTION}/${HERO_BANNER_DOC}`);
+  }
+}
+
+/**
+ * Real-time listener for Pure Raw Ingredients Banner
+ */
+export function subscribeToRawIngredientsBanner(
+  onUpdate: (bannerUrl: string) => void,
+  onError?: (err: any) => void
+) {
+  try {
+    const docRef = doc(db, SETTINGS_COLLECTION, RAW_INGREDIENTS_BANNER_DOC);
+    return onSnapshot(
+      docRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data && typeof data.bannerUrl === 'string' && data.bannerUrl) {
+            onUpdate(data.bannerUrl);
+          }
+        }
+      },
+      (error) => {
+        if (onError) onError(error);
+        console.warn('Raw ingredients banner subscription warning:', error);
+      }
+    );
+  } catch (err) {
+    console.warn('Failed to subscribe to raw ingredients banner:', err);
+    return () => {};
+  }
+}
+
+/**
+ * Save Pure Raw Ingredients Banner to Firestore
+ */
+export async function saveRawIngredientsBannerToFirestore(bannerUrl: string): Promise<void> {
+  const docRef = doc(db, SETTINGS_COLLECTION, RAW_INGREDIENTS_BANNER_DOC);
+  try {
+    await setDoc(docRef, {
+      bannerUrl,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `${SETTINGS_COLLECTION}/${RAW_INGREDIENTS_BANNER_DOC}`);
+  }
+}
+
+/**
+ * Directly fetch latest Pure Raw Ingredients Banner from Firestore
+ */
+export async function fetchRawIngredientsBannerFromFirestore(): Promise<string | null> {
+  try {
+    const snap = await getDoc(doc(db, SETTINGS_COLLECTION, RAW_INGREDIENTS_BANNER_DOC));
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data && typeof data.bannerUrl === 'string' && data.bannerUrl) {
+        return data.bannerUrl;
+      }
+    }
+    return null;
+  } catch (err) {
+    console.warn('fetchRawIngredientsBannerFromFirestore warning:', err);
+    return null;
+  }
+}
+
+const CATEGORIES_SETTINGS_DOC = 'categories_config';
+
+/**
+ * Real-time listener for Categories config (banner images & display order)
+ */
+export function subscribeToCategories(
+  onUpdate: (categories: CategoryConfig[]) => void,
+  onError?: (err: any) => void
+) {
+  try {
+    const docRef = doc(db, SETTINGS_COLLECTION, CATEGORIES_SETTINGS_DOC);
+    return onSnapshot(
+      docRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data && Array.isArray(data.categories) && data.categories.length > 0) {
+            onUpdate(data.categories as CategoryConfig[]);
+          }
+        }
+      },
+      (error) => {
+        if (onError) onError(error);
+        console.warn('Categories subscription warning:', error);
+      }
+    );
+  } catch (err) {
+    console.warn('Failed to subscribe to categories:', err);
+    return () => {};
+  }
+}
+
+/**
+ * Save Category configs (banner images & display order) to Firestore
+ */
+export async function saveCategoriesToFirestore(categories: CategoryConfig[]): Promise<void> {
+  const docRef = doc(db, SETTINGS_COLLECTION, CATEGORIES_SETTINGS_DOC);
+  try {
+    await setDoc(docRef, {
+      categories,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `${SETTINGS_COLLECTION}/${CATEGORIES_SETTINGS_DOC}`);
+  }
+}
+
+/**
+ * Directly fetch latest category configs from Firestore
+ */
+export async function fetchCategoriesFromFirestore(): Promise<CategoryConfig[] | null> {
+  try {
+    const snap = await getDoc(doc(db, SETTINGS_COLLECTION, CATEGORIES_SETTINGS_DOC));
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data && Array.isArray(data.categories) && data.categories.length > 0) {
+        return data.categories as CategoryConfig[];
+      }
+    }
+    return null;
+  } catch (err) {
+    console.warn('fetchCategoriesFromFirestore error:', err);
+    return null;
   }
 }
 

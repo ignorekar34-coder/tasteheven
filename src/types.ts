@@ -1,5 +1,17 @@
 export type ProductCategory = 'all' | 'honey' | 'achar' | 'murabba' | 'featured';
 
+export interface CategoryConfig {
+  id: 'honey' | 'achar' | 'murabba';
+  title: string;
+  urduTitle: string;
+  tagline: string;
+  bannerImage: string;
+  defaultImage: string;
+  displayOrder: number;
+  color?: string;
+  badgeColor?: string;
+}
+
 export interface ProductWeightOption {
   weight: string;
   price: number;
