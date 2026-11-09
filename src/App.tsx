@@ -17,20 +17,34 @@ import {
   FolderPlus,
   Lock,
   Layers,
-  CheckCircle2,
 } from 'lucide-react';
 import { processImageFile } from './utils/imageUtils';
+import defaultMangoImg from './assets/images/mango_achar_lahore_jar_1794203977577.jpg';
+import defaultGarlicImg from './assets/images/garlic_achar_lahore_jar_1794203978491.jpg';
+import defaultMixImg from './assets/images/mix_achar_lahore_jar_1794203978362.jpg';
 
 // Default high-resolution product photos generated for Taste Heven Lahore (clean white backgrounds)
-const DEFAULT_MANGO_IMG = '/src/assets/images/mango_achar_lahore_jar_1794203977577.jpg';
-const DEFAULT_GARLIC_IMG = '/src/assets/images/garlic_achar_lahore_jar_1794203978491.jpg';
-const DEFAULT_MIX_IMG = '/src/assets/images/mix_achar_lahore_jar_1794203978362.jpg';
+const DEFAULT_MANGO_IMG = defaultMangoImg || '/images/mango_achar.jpg';
+const DEFAULT_GARLIC_IMG = defaultGarlicImg || '/images/garlic_achar.jpg';
+const DEFAULT_MIX_IMG = defaultMixImg || '/images/mix_achar.jpg';
 
 // WhatsApp phone configuration (92XXXXXXXXXX format without 0)
 const WHATSAPP_PHONE = '923248314001';
+const DISPLAY_PHONE = '03248314001';
+const OWNERS_NAMES = 'Farman Ali & Ahmad Waseem';
 
-// Default Admin Password (can also be changed from the Admin Portal)
+// Default Admin Password (strictly confidential, never displayed in public UI)
 const DEFAULT_ADMIN_PASSWORD = 'heven123';
+
+// Instant Safe Image Resolver ensuring zero-glitch and zero-broken-image startup
+export function getSafeProductImage(id: string, img: string | undefined): string {
+  if (img && img.startsWith('data:image/')) return img;
+  if (id === 'mango-achar' || (img && img.includes('mango'))) return DEFAULT_MANGO_IMG;
+  if (id === 'garlic-achar' || (img && img.includes('garlic'))) return DEFAULT_GARLIC_IMG;
+  if (id === 'mix-achar' || (img && img.includes('mix'))) return DEFAULT_MIX_IMG;
+  if (img && (img.startsWith('http') || img.startsWith('/'))) return img;
+  return DEFAULT_MANGO_IMG;
+}
 
 export interface CategoryItem {
   id: string;
@@ -124,7 +138,7 @@ export default function App() {
   // Categories list with localStorage persistence
   const [categories, setCategories] = useState<CategoryItem[]>(() => {
     try {
-      const saved = localStorage.getItem('taste_heven_categories_v5');
+      const saved = localStorage.getItem('taste_heven_categories_v8');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -133,27 +147,52 @@ export default function App() {
     return INITIAL_CATEGORIES;
   });
 
-  // Products with localStorage persistence
+  // Products with localStorage persistence and instant auto-repair of image URLs
   const [products, setProducts] = useState<ProductItem[]>(() => {
     try {
-      const saved = localStorage.getItem('taste_heven_achar_products_v5');
+      const saved = localStorage.getItem('taste_heven_achar_products_v8');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((p: ProductItem) => ({
+            ...p,
+            image: getSafeProductImage(p.id, p.image),
+          }));
+        }
       }
     } catch {}
     return INITIAL_PRODUCTS;
   });
 
-  // Hero Mango Jar image with localStorage persistence
+  // Hero Mango Jar image with instant auto-repair
   const [heroImage, setHeroImage] = useState<string>(() => {
     try {
-      const saved = localStorage.getItem('taste_heven_hero_jar_v5');
-      return saved || DEFAULT_MANGO_IMG;
-    } catch {
-      return DEFAULT_MANGO_IMG;
-    }
+      const saved = localStorage.getItem('taste_heven_hero_jar_v8');
+      if (saved && saved.startsWith('data:image/')) return saved;
+    } catch {}
+    return DEFAULT_MANGO_IMG;
   });
+
+  // Pre-cache all product photos in memory on mount for 0ms lag
+  useEffect(() => {
+    const urls = [
+      DEFAULT_MANGO_IMG,
+      DEFAULT_GARLIC_IMG,
+      DEFAULT_MIX_IMG,
+      '/images/mango_achar.jpg',
+      '/images/garlic_achar.jpg',
+      '/images/mix_achar.jpg',
+    ];
+    urls.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+
+    // Check URL parameters for direct owner login access (?admin or #admin)
+    if (window.location.search.includes('admin') || window.location.hash.includes('admin')) {
+      setIsPasswordModalOpen(true);
+    }
+  }, []);
 
   // New category creation form
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -185,7 +224,7 @@ export default function App() {
   // Persist products to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem('taste_heven_achar_products_v5', JSON.stringify(products));
+      localStorage.setItem('taste_heven_achar_products_v8', JSON.stringify(products));
     } catch (e) {
       console.warn('localStorage save error', e);
     }
@@ -194,13 +233,13 @@ export default function App() {
   // Persist categories to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem('taste_heven_categories_v5', JSON.stringify(categories));
+      localStorage.setItem('taste_heven_categories_v8', JSON.stringify(categories));
     } catch (e) {
       console.warn('localStorage save error', e);
     }
   }, [categories]);
 
-  // Handle Admin Login Check
+  // Handle Admin Login Check (strictly confidential password validation)
   const handleAdminLoginSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (enteredPassword.trim() === adminPassword.trim() || enteredPassword === 'heven123') {
@@ -212,21 +251,10 @@ export default function App() {
       setEnteredPassword('');
       setPasswordError('');
       setViewMode('admin');
-      showToast('Welcome to Admin Portal! لاگ اِن کامیاب');
+      showToast('Welcome to Management Portal! لاگ اِن کامیاب');
     } else {
-      setPasswordError('غلط پاسورڈ! براہ کرم درست پاسورڈ درج کریں۔ (Default: heven123)');
+      setPasswordError('غلط پاسورڈ! براہ کرم درست پاسورڈ درج کریں۔');
     }
-  };
-
-  // Direct 1-Click Owner Login Helper
-  const handleQuickOwnerLogin = () => {
-    setIsAdminLoggedIn(true);
-    try {
-      localStorage.setItem('taste_heven_admin_logged_in', 'true');
-    } catch {}
-    setIsPasswordModalOpen(false);
-    setViewMode('admin');
-    showToast('Welcome Ahmad & Farman! لاگ اِن کامیاب');
   };
 
   // Handle Admin Logout
@@ -236,7 +264,7 @@ export default function App() {
       localStorage.setItem('taste_heven_admin_logged_in', 'false');
     } catch {}
     setViewMode('store');
-    showToast('ایڈمن پورٹل سے لاگ آؤٹ ہو گئے');
+    showToast('پورٹل سے لاگ آؤٹ ہو گئے');
   };
 
   // Change Admin Password
@@ -426,24 +454,11 @@ export default function App() {
           <div className="bg-white rounded-2xl p-6 border border-neutral-200 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-xl sm:text-2xl font-extrabold text-black">
-                ایڈمن پورٹل: پروڈکٹس، کیٹیگریز اور فوٹوز مینیجر
+                مینجمنٹ پورٹل: پروڈکٹس اور فوٹوز مینیجر
               </h1>
               <p className="text-xs sm:text-sm text-neutral-600 mt-1">
-                یہاں سے آپ نئی پروڈکٹ، نئی کیٹیگری، تصویر، قیمت اور پاسورڈ تبدیل کر سکتے ہیں۔
+                یہاں سے آپ نئی پروڈکٹ، کیٹیگری، تصویر اور قیمت تبدیل کر سکتے ہیں۔
               </p>
-              {/* Display current admin password prominently */}
-              <div className="mt-2.5 inline-flex items-center gap-2 px-3 py-1 bg-amber-50 border border-amber-200 rounded-lg text-xs font-semibold text-amber-900">
-                <Key className="w-3.5 h-3.5 text-amber-600" />
-                <span>
-                  Admin Password: <strong className="font-mono text-black font-bold">{adminPassword}</strong>
-                </span>
-                <button
-                  onClick={() => setIsChangingPassword(!isChangingPassword)}
-                  className="ml-2 underline text-amber-800 hover:text-black cursor-pointer font-medium"
-                >
-                  پاسورڈ بدلیں (Change)
-                </button>
-              </div>
             </div>
 
             <div className="flex items-center gap-2 shrink-0 flex-wrap">
@@ -463,6 +478,14 @@ export default function App() {
                 <FolderPlus className="w-4 h-4 text-amber-600" />
                 <span>نئی کیٹیگری بنائیں</span>
               </button>
+              {/* Change Password Button */}
+              <button
+                onClick={() => setIsChangingPassword(!isChangingPassword)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-neutral-100 text-neutral-800 hover:bg-neutral-200 rounded-full text-xs font-semibold transition-colors cursor-pointer border border-neutral-300"
+              >
+                <Key className="w-4 h-4 text-neutral-600" />
+                <span>پاسورڈ بدلیں</span>
+              </button>
               {/* Reset to Defaults */}
               <button
                 onClick={handleResetDefaults}
@@ -477,17 +500,17 @@ export default function App() {
 
           {/* Change Password Form (Accordion) */}
           {isChangingPassword && (
-            <div className="bg-amber-50 rounded-2xl p-5 border border-amber-200 mb-8 max-w-md">
-              <h3 className="text-xs font-bold text-amber-950 uppercase mb-2">
+            <div className="bg-neutral-50 rounded-2xl p-5 border border-neutral-200 mb-8 max-w-md">
+              <h3 className="text-xs font-bold text-neutral-800 uppercase mb-2">
                 نیا ایڈمن پاسورڈ سیٹ کریں:
               </h3>
               <div className="flex gap-2">
                 <input
-                  type="text"
-                  placeholder="نیا پاسورڈ لکھیں (e.g. heven123)"
+                  type="password"
+                  placeholder="نیا پاسورڈ درج کریں..."
                   value={newPasswordInput}
                   onChange={(e) => setNewPasswordInput(e.target.value)}
-                  className="flex-1 px-3 py-2 text-xs bg-white border border-amber-300 rounded-xl focus:outline-none focus:border-black font-mono"
+                  className="flex-1 px-3 py-2 text-xs bg-white border border-neutral-300 rounded-xl focus:outline-none focus:border-black font-mono"
                 />
                 <button
                   onClick={handleSaveNewPassword}
@@ -1041,22 +1064,11 @@ export default function App() {
       {/* 1. HEADER ONLY - LOGO COMPLETELY CENTERED */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-neutral-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-20 grid grid-cols-3 items-center">
-          {/* Left: Password-Protected Admin Portal Link */}
+          {/* Left: Clean Brand Origin Tag */}
           <div className="flex items-center justify-start">
-            <button
-              onClick={() => {
-                if (isAdminLoggedIn) {
-                  setViewMode('admin');
-                } else {
-                  setIsPasswordModalOpen(true);
-                }
-              }}
-              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-semibold rounded-full transition-colors cursor-pointer border border-neutral-200 whitespace-nowrap"
-              title="Admin Portal (پاسورڈ: heven123)"
-            >
-              <Lock className="w-3 h-3 text-neutral-500" />
-              <span>Admin Portal</span>
-            </button>
+            <span className="text-[11px] sm:text-xs font-semibold tracking-wider uppercase text-neutral-400">
+              Lahore · Pakistan
+            </span>
           </div>
 
           {/* Center: Logo Name "TASTE HEVEN" in SOLID BLACK, completely centered */}
@@ -1098,7 +1110,7 @@ export default function App() {
 
           {/* Big Center Image of Mango Achar Jar (320x320 on pure white background, rounded) */}
           <div className="mt-8 flex justify-center">
-            <div className="relative group w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] bg-white rounded-2xl p-2 border border-neutral-100 shadow-lg hover:shadow-xl transition-shadow duration-300 flex items-center justify-center">
+            <div className="w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] bg-white rounded-2xl p-2 border border-neutral-100 shadow-lg hover:shadow-xl transition-shadow duration-300 flex items-center justify-center">
               <img
                 src={heroImage}
                 alt="Mango Achar Lahore - TASTE HEVEN"
@@ -1108,28 +1120,13 @@ export default function App() {
                 decoding="async"
                 fetchPriority="high"
                 onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = DEFAULT_MANGO_IMG;
+                  const target = e.currentTarget as HTMLImageElement;
+                  if (target.src !== DEFAULT_MANGO_IMG && target.src !== '/images/mango_achar.jpg') {
+                    target.src = DEFAULT_MANGO_IMG || '/images/mango_achar.jpg';
+                  }
                 }}
-                className="w-full h-full object-contain rounded-xl"
+                className="w-full h-full object-contain rounded-xl select-none"
               />
-
-              {/* Direct "Change Photo" button on the Hero Jar */}
-              <label
-                className="absolute bottom-3 right-3 bg-black/85 hover:bg-black text-white px-3 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-1.5 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-md"
-                title="Change Hero Jar Image"
-              >
-                <Camera className="w-3.5 h-3.5 text-amber-400" />
-                <span>تصویر بدلیں</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) handleHeroFileUpload(f);
-                  }}
-                />
-              </label>
             </div>
           </div>
 
@@ -1162,8 +1159,8 @@ export default function App() {
               <h2 className="text-2xl sm:text-3xl font-extrabold text-black tracking-tight">
                 Our Best Sellers in Lahore
               </h2>
-              <p className="mt-2 text-xs sm:text-sm text-neutral-600 font-medium">
-                Ghar ka bana zaiqedaar achar, bina kisi chemical ya sirkay ke. Order karein aur kal apne dastarkhwan par paaein!
+              <p className="mt-2 text-xs sm:text-sm text-neutral-500 font-medium">
+                Ghar Ka Bana Zaiqedaar Achar
               </p>
             </div>
 
@@ -1196,8 +1193,8 @@ export default function App() {
                     className="bg-white border border-neutral-200 rounded-2xl p-4 sm:p-6 text-center flex flex-col justify-between hover:shadow-md hover:border-neutral-300 transition-all duration-200 group"
                   >
                     <div>
-                      {/* Square Product Image with Change Photo button */}
-                      <div className="relative w-full aspect-square bg-neutral-50 rounded-xl overflow-hidden mb-4 flex items-center justify-center p-2 border border-neutral-100">
+                      {/* Product Image (Crisp, Stable & Glitch-Free) */}
+                      <div className="w-full aspect-square bg-neutral-50 rounded-xl overflow-hidden mb-4 flex items-center justify-center p-2 border border-neutral-100">
                         <img
                           src={prod.image}
                           alt={prod.altText}
@@ -1206,28 +1203,19 @@ export default function App() {
                           loading="eager"
                           decoding="async"
                           onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = DEFAULT_MANGO_IMG;
+                            const target = e.currentTarget;
+                            const fallback =
+                              prod.id === 'garlic-achar'
+                                ? DEFAULT_GARLIC_IMG || '/images/garlic_achar.jpg'
+                                : prod.id === 'mix-achar'
+                                ? DEFAULT_MIX_IMG || '/images/mix_achar.jpg'
+                                : DEFAULT_MANGO_IMG || '/images/mango_achar.jpg';
+                            if (target.src !== fallback) {
+                              target.src = fallback;
+                            }
                           }}
-                          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-contain select-none pointer-events-none"
                         />
-
-                        {/* Photo Change Button directly on card */}
-                        <label
-                          className="absolute bottom-2 right-2 bg-black/80 hover:bg-black text-white p-2 sm:px-2.5 sm:py-1 rounded-full text-[10px] font-semibold flex items-center gap-1 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-sm"
-                          title="Upload new photo for this product"
-                        >
-                          <Camera className="w-3.5 h-3.5 text-amber-400" />
-                          <span className="hidden sm:inline">تصویر بدلیں</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) handleFileUpload(prod.id, file);
-                            }}
-                          />
-                        </label>
                       </div>
 
                       {/* Product Name H3 */}
@@ -1328,31 +1316,107 @@ export default function App() {
         </section>
       </main>
 
-      {/* QUIET BRAND FOOTER */}
-      <footer className="py-8 px-4 border-t border-neutral-100 text-center text-xs text-neutral-500 bg-white">
-        <p className="font-bold text-black tracking-wide text-sm">
-          TASTE HEVEN · Ghar Jaisa Khaalis Achar - Lahore
-        </p>
-        <p className="mt-1">
-          Same Day & Next Day Delivery across all areas of Lahore · WhatsApp: 0324-8314001
-        </p>
-        <div className="mt-3 flex items-center justify-center gap-4 text-xs">
-          <button
-            onClick={() => {
-              if (isAdminLoggedIn) {
-                setViewMode('admin');
-              } else {
-                setIsPasswordModalOpen(true);
-              }
-            }}
-            className="text-neutral-700 hover:text-black font-semibold underline underline-offset-4 cursor-pointer"
-          >
-            Admin Portal (پاسورڈ: {adminPassword})
-          </button>
+      {/* PROFESSIONAL LUXURY FOOTER: BRAND, FOUNDERS & CUSTOMER CARE */}
+      <footer className="pt-14 pb-12 px-4 sm:px-6 border-t border-neutral-200 bg-white">
+        <div className="max-w-4xl mx-auto">
+          {/* Header Row: Centered Brand Mark */}
+          <div className="text-center pb-8 border-b border-neutral-100">
+            <span className="text-2xl sm:text-3xl font-black text-black tracking-tight select-none">
+              TASTE HEVEN
+            </span>
+            <p className="text-xs sm:text-sm text-neutral-500 font-medium tracking-wide mt-1">
+              Ghar Jaisa Khaalis Achar · Lahore, Pakistan
+            </p>
+          </div>
+
+          {/* Editorial 2-Column Professional Information Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-8 border-b border-neutral-100">
+            {/* Column 1: Customer Inquiries & Direct Orders */}
+            <div className="bg-neutral-50/70 rounded-2xl p-6 border border-neutral-200/70 flex flex-col justify-between">
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-widest text-neutral-400 block mb-2">
+                  Customer Support & Orders
+                </span>
+                <p className="text-xs text-neutral-600 leading-relaxed mb-4">
+                  For quick orders, bulk inquiries, and same-day delivery updates across Lahore, connect directly with our helpline.
+                </p>
+              </div>
+
+              <div className="pt-3 border-t border-neutral-200/60 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-neutral-400 block tracking-wider">
+                    WhatsApp Helpline
+                  </span>
+                  <a
+                    href={`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent('As-salamu Alaikum, mujhe TASTE HEVEN website se achar order karna hai. Lahore delivery chahiye.')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-base sm:text-lg font-black text-black hover:text-[#25D366] transition-colors inline-flex items-center gap-2 mt-0.5"
+                  >
+                    <MessageCircle className="w-4 h-4 text-[#25D366] fill-[#25D366] shrink-0" />
+                    <span className="font-mono tracking-tight">{DISPLAY_PHONE}</span>
+                  </a>
+                </div>
+
+                <a
+                  href={`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent('As-salamu Alaikum, mujhe TASTE HEVEN website se achar order karna hai. Lahore delivery chahiye.')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-black hover:bg-neutral-800 text-white text-xs font-semibold rounded-full shadow-xs transition-all whitespace-nowrap"
+                >
+                  Chat Now
+                </a>
+              </div>
+            </div>
+
+            {/* Column 2: Founders & Direction */}
+            <div className="bg-neutral-50/70 rounded-2xl p-6 border border-neutral-200/70 flex flex-col justify-between">
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-widest text-neutral-400 block mb-2">
+                  Founders & Direction
+                </span>
+                <p className="text-base sm:text-lg font-bold text-neutral-900 tracking-tight">
+                  {OWNERS_NAMES}
+                </p>
+                <p className="text-xs text-neutral-600 leading-relaxed mt-2">
+                  Dedicated to preserving authentic Pakistani heirloom recipes, handcrafted in small batches using pure mustard oil and natural ingredients.
+                </p>
+              </div>
+
+              <div className="pt-3 border-t border-neutral-200/60 flex items-center justify-between text-xs text-neutral-500">
+                <span className="font-medium text-neutral-700">Origin: Lahore, Pakistan</span>
+                <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
+                  <Check className="w-3.5 h-3.5" /> 100% Homestyle
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Bar: Delivery note, Copyright & Discreet Management Key */}
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-500">
+            <p className="text-[11px] text-neutral-400 text-center sm:text-left flex items-center justify-center sm:justify-start gap-1.5">
+              <span>© {new Date().getFullYear()} TASTE HEVEN. All Rights Reserved. Cash on Delivery across Lahore.</span>
+              <button
+                onClick={() => {
+                  if (isAdminLoggedIn) {
+                    setViewMode('admin');
+                  } else {
+                    setIsPasswordModalOpen(true);
+                  }
+                }}
+                className="text-neutral-300 hover:text-neutral-600 transition-colors p-0.5 cursor-pointer ml-1"
+                title="Portal"
+                aria-label="Portal"
+              >
+                <Lock className="w-3 h-3" />
+              </button>
+            </p>
+
+            <div className="text-[11px] text-neutral-400">
+              100% Homestyle · Pure Mustard Oil · Lahore Delivery
+            </div>
+          </div>
         </div>
-        <p className="mt-2 text-[11px] text-neutral-400">
-          © {new Date().getFullYear()} TASTE HEVEN. All Rights Reserved.
-        </p>
       </footer>
 
       {/* 6. WHATSAPP FUNCTIONALITY: Floating Green WhatsApp Button at Bottom Right */}
@@ -1369,7 +1433,7 @@ export default function App() {
         </span>
       </a>
 
-      {/* MODAL: ADMIN PASSWORD LOGIN */}
+      {/* MODAL: ADMIN PASSWORD LOGIN (CONFIDENTIAL & SECURE) */}
       {isPasswordModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-neutral-200">
@@ -1379,42 +1443,34 @@ export default function App() {
                   <Lock className="w-4 h-4" />
                 </div>
                 <h3 className="text-base font-extrabold text-black">
-                  Admin Portal Login
+                  Login
                 </h3>
               </div>
               <button
                 onClick={() => {
                   setIsPasswordModalOpen(false);
                   setPasswordError('');
+                  setEnteredPassword('');
                 }}
-                className="p-1 text-neutral-400 hover:text-black"
+                className="p-1 text-neutral-400 hover:text-black cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Clear password display box */}
-            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900">
-              <p className="font-bold text-black flex items-center gap-1.5">
-                <Key className="w-3.5 h-3.5 text-amber-600" />
-                <span>Admin Password:</span>
-                <span className="font-mono bg-white px-2 py-0.5 rounded border border-amber-300 font-bold text-sm text-black">
-                  {adminPassword}
-                </span>
-              </p>
-              <p className="text-[11px] text-neutral-600 mt-1">
-                آپ نیچے پاسورڈ درج کر سکتے ہیں یا ڈائریکٹ 1-کلک لاگ اِن بٹن دبا سکتے ہیں۔
-              </p>
-            </div>
+            <p className="text-xs text-neutral-500 mb-4">
+              پورٹل میں داخل ہونے کے لیے پاسورڈ درج کریں۔
+            </p>
 
             <form onSubmit={handleAdminLoginSubmit} className="space-y-3">
               <div>
                 <input
                   type="password"
-                  placeholder="پاسورڈ درج کریں (heven123)"
+                  placeholder="پاسورڈ درج کریں..."
                   value={enteredPassword}
                   onChange={(e) => setEnteredPassword(e.target.value)}
                   autoFocus
+                  required
                   className="w-full px-4 py-2.5 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-black font-mono text-center tracking-wider"
                 />
               </div>
@@ -1427,18 +1483,9 @@ export default function App() {
 
               <button
                 type="submit"
-                className="w-full py-2.5 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl transition-all cursor-pointer"
+                className="w-full py-2.5 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-sm"
               >
-                لاگ اِن کریں (Login)
-              </button>
-
-              {/* Instant 1-Click Owner Login Option */}
-              <button
-                type="button"
-                onClick={handleQuickOwnerLogin}
-                className="w-full py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
-              >
-                1-کلک ڈائریکٹ لاگ اِن (Quick Owner Access)
+                لاگ ان کریں (Login)
               </button>
             </form>
           </div>

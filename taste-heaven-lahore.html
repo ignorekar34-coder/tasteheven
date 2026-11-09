@@ -60,11 +60,11 @@
   <!-- 1. HEADER ONLY - LOGO COMPLETELY CENTERED -->
   <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-neutral-100">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 h-20 grid grid-cols-3 items-center">
-      <!-- Left: Admin Portal Button (Password: heven123) -->
+      <!-- Left: Location Tag -->
       <div class="flex items-center justify-start">
-        <button onclick="openAdminModal()" class="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-semibold rounded-full transition-colors border border-neutral-200 whitespace-nowrap cursor-pointer">
-          Admin Portal
-        </button>
+        <span class="text-[11px] sm:text-xs font-semibold tracking-wider uppercase text-neutral-400">
+          Lahore · Pakistan
+        </span>
       </div>
 
       <!-- Center: Logo Name "TASTE HEVEN" in SOLID BLACK, completely centered -->
@@ -100,11 +100,11 @@
       <div class="mt-8 flex justify-center">
         <div class="w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] bg-white rounded-2xl p-2 border border-neutral-100 shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center">
           <img 
-            src="/src/assets/images/mango_achar_lahore_jar_1794203977577.jpg" 
+            src="/images/mango_achar.jpg" 
             alt="Mango Achar Lahore - TASTE HEVEN" 
             width="320" 
             height="320" 
-            class="w-full h-full object-contain rounded-xl"
+            class="w-full h-full object-contain rounded-xl select-none"
             loading="eager"
           />
         </div>
@@ -138,8 +138,8 @@
           <h2 class="text-2xl sm:text-3xl font-extrabold text-black tracking-tight">
             Our Best Sellers in Lahore
           </h2>
-          <p class="mt-2 text-xs sm:text-sm text-neutral-600 font-medium">
-            Ghar ka bana zaiqedaar achar, bina kisi chemical ya sirkay ke. Order karein aur kal apne dastarkhwan par paaein!
+          <p class="mt-2 text-xs sm:text-sm text-neutral-500 font-medium">
+            Ghar Ka Bana Zaiqedaar Achar
           </p>
         </div>
 
@@ -159,10 +159,10 @@
             <div>
               <div class="w-full aspect-square bg-white rounded-xl overflow-hidden mb-4 flex items-center justify-center p-2 border border-neutral-50">
                 <img 
-                  src="/src/assets/images/mango_achar_lahore_jar_1794203977577.jpg" 
+                  src="/images/mango_achar.jpg" 
                   alt="Mango Achar Lahore - TASTE HEVEN" 
-                  class="w-full h-full object-contain hover:scale-105 transition-transform duration-300" 
-                  loading="lazy"
+                  class="w-full h-full object-contain select-none pointer-events-none" 
+                  loading="eager"
                 />
               </div>
               <h3 class="text-base sm:text-lg font-bold text-black tracking-tight">
@@ -196,10 +196,10 @@
             <div>
               <div class="w-full aspect-square bg-white rounded-xl overflow-hidden mb-4 flex items-center justify-center p-2 border border-neutral-50">
                 <img 
-                  src="/src/assets/images/garlic_achar_lahore_jar_1794203978491.jpg" 
+                  src="/images/garlic_achar.jpg" 
                   alt="Garlic Lehsan Achar Lahore - TASTE HEVEN" 
-                  class="w-full h-full object-contain hover:scale-105 transition-transform duration-300" 
-                  loading="lazy"
+                  class="w-full h-full object-contain select-none pointer-events-none" 
+                  loading="eager"
                 />
               </div>
               <h3 class="text-base sm:text-lg font-bold text-black tracking-tight">
@@ -233,10 +233,10 @@
             <div>
               <div class="w-full aspect-square bg-white rounded-xl overflow-hidden mb-4 flex items-center justify-center p-2 border border-neutral-50">
                 <img 
-                  src="/src/assets/images/mix_achar_lahore_jar_1794203978362.jpg" 
+                  src="/images/mix_achar.jpg" 
                   alt="Mix Achar Lahore - TASTE HEVEN" 
-                  class="w-full h-full object-contain hover:scale-105 transition-transform duration-300" 
-                  loading="lazy"
+                  class="w-full h-full object-contain select-none pointer-events-none" 
+                  loading="eager"
                 />
               </div>
               <h3 class="text-base sm:text-lg font-bold text-black tracking-tight">
@@ -292,17 +292,67 @@
     </section>
   </main>
 
-  <!-- FOOTER -->
-  <footer class="py-8 px-4 border-t border-neutral-100 text-center text-xs text-neutral-500 bg-white">
-    <p class="font-semibold text-neutral-800">
-      TASTE HEVEN · Ghar Jaisa Khaalis Achar - Lahore
-    </p>
-    <p class="mt-1">
-      Admin Password: <strong class="text-black">heven123</strong> · WhatsApp: 0324-8314001
-    </p>
-    <p class="mt-2 text-[11px] text-neutral-400">
-      &copy; 2026 TASTE HEVEN. All Rights Reserved.
-    </p>
+  <!-- FOOTER: OWNERS & WHATSAPP CONTACT DETAILS -->
+  <footer class="py-12 px-4 sm:px-6 border-t border-neutral-200 bg-white text-center">
+    <div class="max-w-3xl mx-auto space-y-6">
+      <div class="inline-block">
+        <span class="text-xl sm:text-2xl font-black text-black tracking-tight">
+          TASTE HEVEN
+        </span>
+        <p class="text-xs text-neutral-500 font-medium tracking-wide mt-1">
+          Ghar Jaisa Khaalis Achar · Lahore
+        </p>
+      </div>
+
+      <!-- Owners & WhatsApp Details Card -->
+      <div class="bg-neutral-50 rounded-2xl p-6 border border-neutral-200/90 max-w-xl mx-auto shadow-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 divide-y sm:divide-y-0 sm:divide-x divide-neutral-200">
+          <!-- WhatsApp Contact Box -->
+          <div class="flex flex-col items-center justify-center pb-4 sm:pb-0 sm:pr-4">
+            <span class="text-[11px] uppercase font-bold tracking-wider text-neutral-500 mb-1.5">
+              WhatsApp Order & Helpline
+            </span>
+            <a
+              href="https://wa.me/923248314001?text=As-salamu%20Alaikum%2C%20mujhe%20TASTE%20HEVEN%20website%20se%20achar%20order%20karna%20hai.%20Lahore%20delivery%20chahiye."
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-2 text-base sm:text-lg font-black text-black hover:text-[#25D366] transition-colors"
+            >
+              <span class="font-mono tracking-tight">03248314001</span>
+            </a>
+            <span class="text-[11px] text-neutral-500 mt-1">
+              (0324-8314001 · Click to Order)
+            </span>
+          </div>
+
+          <!-- Brand Owners Box -->
+          <div class="flex flex-col items-center justify-center pt-4 sm:pt-0 sm:pl-4">
+            <span class="text-[11px] uppercase font-bold tracking-wider text-neutral-500 mb-1.5">
+              Owners (مالکان)
+            </span>
+            <p class="text-base sm:text-lg font-extrabold text-black tracking-tight">
+              Farman Ali & Ahmad Waseem
+            </p>
+            <span class="text-[11px] text-neutral-500 mt-1">
+              Lahore, Pakistan · 100% Homemade
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-2 text-xs text-neutral-500">
+        <span>Lahore Me Cash on Delivery Available</span>
+        <span>·</span>
+        <span>100% Homestyle Quality</span>
+      </div>
+
+      <p class="text-[11px] text-neutral-400 pt-2 border-t border-neutral-100 flex items-center justify-center gap-1.5">
+        <span>&copy; 2026 TASTE HEVEN. All Rights Reserved. Crafted with care in Lahore.</span>
+        <button onclick="openAdminModal()" class="text-neutral-300 hover:text-neutral-500 transition-colors p-0.5 cursor-pointer" title="Portal">
+          &#128274;
+        </button>
+      </p>
+    </div>
   </footer>
 
   <!-- FLOATING WHATSAPP BUTTON -->
@@ -321,11 +371,11 @@
   <!-- MODAL SCRIPT -->
   <script>
     function openAdminModal() {
-      const pwd = prompt("Enter Admin Password (پاسورڈ درج کریں): \n(Default Password: heven123)");
+      const pwd = prompt("Enter Admin Password (پاسورڈ درج کریں):");
       if (pwd === "heven123" || pwd === "taste2026") {
         alert("Login Successful! You can manage products, categories and photos from the live app.");
       } else if (pwd !== null) {
-        alert("Incorrect password! Default password is: heven123");
+        alert("Incorrect password!");
       }
     }
   </script>
