@@ -239,10 +239,12 @@ export default function App() {
     }
   }, [categories]);
 
-  // Handle Admin Login Check (strictly confidential password validation)
+  // Handle Admin Login Check (strictly confidential password validation for HEVEN123)
   const handleAdminLoginSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (enteredPassword.trim() === adminPassword.trim() || enteredPassword === 'heven123') {
+    const entered = enteredPassword.trim().toLowerCase();
+    const current = adminPassword.trim().toLowerCase();
+    if (entered === current || entered === 'heven123') {
       setIsAdminLoggedIn(true);
       try {
         localStorage.setItem('taste_heven_admin_logged_in', 'true');
@@ -251,9 +253,9 @@ export default function App() {
       setEnteredPassword('');
       setPasswordError('');
       setViewMode('admin');
-      showToast('Welcome to Management Portal! لاگ اِن کامیاب');
+      showToast('Welcome to Admin Portal! لاگ اِن کامیاب');
     } else {
-      setPasswordError('غلط پاسورڈ! براہ کرم درست پاسورڈ درج کریں۔');
+      setPasswordError('غلط پاسورڈ! دوبارہ کوشش کریں۔');
     }
   };
 
@@ -1064,11 +1066,22 @@ export default function App() {
       {/* 1. HEADER ONLY - LOGO COMPLETELY CENTERED */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-neutral-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-20 grid grid-cols-3 items-center">
-          {/* Left: Clean Brand Origin Tag */}
+          {/* Left: Admin Portal Button (Protected by password HEVEN123) */}
           <div className="flex items-center justify-start">
-            <span className="text-[11px] sm:text-xs font-semibold tracking-wider uppercase text-neutral-400">
-              Lahore · Pakistan
-            </span>
+            <button
+              onClick={() => {
+                if (isAdminLoggedIn) {
+                  setViewMode('admin');
+                } else {
+                  setIsPasswordModalOpen(true);
+                }
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-semibold rounded-full border border-neutral-200 transition-colors cursor-pointer whitespace-nowrap"
+              title="Admin Portal"
+            >
+              <Lock className="w-3.5 h-3.5 text-neutral-600" />
+              <span>Admin Portal</span>
+            </button>
           </div>
 
           {/* Center: Logo Name "TASTE HEVEN" in SOLID BLACK, completely centered */}

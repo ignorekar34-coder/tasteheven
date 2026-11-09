@@ -60,11 +60,11 @@
   <!-- 1. HEADER ONLY - LOGO COMPLETELY CENTERED -->
   <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-neutral-100">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 h-20 grid grid-cols-3 items-center">
-      <!-- Left: Location Tag -->
+      <!-- Left: Admin Portal Button -->
       <div class="flex items-center justify-start">
-        <span class="text-[11px] sm:text-xs font-semibold tracking-wider uppercase text-neutral-400">
-          Lahore · Pakistan
-        </span>
+        <button onclick="openAdminModal()" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-semibold rounded-full border border-neutral-200 transition-colors cursor-pointer whitespace-nowrap">
+          <span>Admin Portal</span>
+        </button>
       </div>
 
       <!-- Center: Logo Name "TASTE HEVEN" in SOLID BLACK, completely centered -->
@@ -372,10 +372,10 @@
   <script>
     function openAdminModal() {
       const pwd = prompt("Enter Admin Password (پاسورڈ درج کریں):");
-      if (pwd === "heven123" || pwd === "taste2026") {
+      if (pwd && pwd.trim().toLowerCase() === "heven123") {
         alert("Login Successful! You can manage products, categories and photos from the live app.");
       } else if (pwd !== null) {
-        alert("Incorrect password!");
+        alert("Incorrect password! (غلط پاسورڈ)");
       }
     }
   </script>
