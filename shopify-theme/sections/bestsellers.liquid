@@ -1,0 +1,543 @@
+{%- comment -%}
+  Taste Heven - Modern Minimal Luxury Bestsellers
+  File: sections/bestsellers.liquid
+  OS 2.0 Production Ready
+  Grid: 2 per row on mobile, 4 per row on desktop
+{%- endcomment -%}
+
+{%- style -%}
+  .th-bestsellers-{{ section.id }} {
+    background-color: {{ section.settings.bg_color | default: '#FFFFFF' }};
+    padding: 60px 16px 80px;
+    font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  @media (min-width: 768px) {
+    .th-bestsellers-{{ section.id }} {
+      padding: 80px 24px 100px;
+    }
+  }
+
+  .th-bs-container {
+    max-width: 1240px;
+    margin: 0 auto;
+  }
+
+  /* Header Section */
+  .th-bs-header {
+    text-align: center;
+    max-width: 680px;
+    margin: 0 auto 40px;
+  }
+
+  .th-bs-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: {{ section.settings.accent_gold | default: '#C5A880' }};
+    margin-bottom: 8px;
+  }
+
+  .th-bs-title {
+    font-family: 'Playfair Display', 'Cinzel', serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: #000000;
+    margin: 0 0 10px;
+    letter-spacing: -0.01em;
+  }
+
+  @media (min-width: 768px) {
+    .th-bs-title {
+      font-size: 42px;
+    }
+  }
+
+  .th-bs-desc {
+    font-size: 14px;
+    color: #666666;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* Responsive Grid: STRICTLY 2 on mobile, 4 on desktop */
+  .th-products-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  @media (min-width: 768px) {
+    .th-products-grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .th-products-grid {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+  }
+
+  /* Product Card */
+  .th-card {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 20px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.28s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    position: relative;
+  }
+
+  .th-card:hover {
+    border-color: {{ section.settings.accent_gold | default: '#C5A880' }};
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+    transform: translateY(-3px);
+  }
+
+  /* Product Image Wrapper: 1:1 Square Ratio */
+  .th-card-media {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: #fbf9f6;
+    overflow: hidden;
+  }
+
+  .th-card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    transition: transform 0.5s ease;
+  }
+
+  .th-card:hover .th-card-img {
+    transform: scale(1.05);
+  }
+
+  /* Badges */
+  .th-card-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: #000000;
+    color: {{ section.settings.accent_gold | default: '#C5A880' }};
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 4px 9px;
+    border-radius: 12px;
+    border: 1px solid rgba(197, 168, 128, 0.4);
+    z-index: 2;
+  }
+
+  .th-card-rating {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(4px);
+    color: #111111;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 7px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    z-index: 2;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  /* Content area */
+  .th-card-body {
+    padding: 14px 14px 16px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    justify-content: space-between;
+    text-align: left;
+  }
+
+  @media (min-width: 768px) {
+    .th-card-body {
+      padding: 18px;
+    }
+  }
+
+  .th-card-category {
+    font-size: 10px;
+    color: #888888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .th-card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.35;
+    color: #111111;
+    margin: 0 0 6px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  @media (min-width: 768px) {
+    .th-card-title {
+      font-size: 16px;
+    }
+  }
+
+  .th-card-title a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .th-card-title a:hover {
+    color: {{ section.settings.accent_gold | default: '#C5A880' }};
+  }
+
+  .th-card-weight {
+    font-size: 11px;
+    color: #555555;
+    margin-bottom: 10px;
+    font-weight: 500;
+  }
+
+  /* Price tag with Rs */
+  .th-card-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .th-price-main {
+    font-size: 15px;
+    font-weight: 800;
+    color: #000000;
+    letter-spacing: -0.02em;
+  }
+
+  @media (min-width: 768px) {
+    .th-price-main {
+      font-size: 17px;
+    }
+  }
+
+  .th-price-compare {
+    font-size: 12px;
+    color: #999999;
+    text-decoration: line-through;
+  }
+
+  /* Action Buttons */
+  .th-card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .th-btn-add-cart {
+    background: #000000;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid #000000;
+    border-radius: 50px;
+    padding: 10px 14px;
+    cursor: pointer;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+  }
+
+  @media (min-width: 768px) {
+    .th-btn-add-cart {
+      font-size: 12px;
+      padding: 11px 16px;
+    }
+  }
+
+  .th-btn-add-cart:hover {
+    background: {{ section.settings.accent_gold | default: '#C5A880' }};
+    border-color: {{ section.settings.accent_gold | default: '#C5A880' }};
+    color: #000000;
+  }
+
+  .th-btn-card-wa {
+    background: transparent;
+    border: 1px solid rgba(37, 211, 102, 0.4);
+    color: #1a8738;
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: 50px;
+    padding: 6px 10px;
+    cursor: pointer;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: all 0.2s ease;
+  }
+
+  .th-btn-card-wa:hover {
+    background: #eefdf3;
+    border-color: #25D366;
+  }
+{%- endstyle -%}
+
+<section class="th-bestsellers-{{ section.id }}" id="shop-bestsellers">
+  <div class="th-bs-container">
+    <!-- Header -->
+    <div class="th-bs-header">
+      <div class="th-bs-kicker">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+        </svg>
+        <span>{{ section.settings.kicker_text | default: 'Pure Natural Delicacies' }}</span>
+      </div>
+      <h2 class="th-bs-title">{{ section.settings.title | default: 'Signature Bestsellers' }}</h2>
+      <p class="th-bs-desc">{{ section.settings.description | default: 'Traditional small-batch recipes prepared with cold-pressed oils, wild Potohar nectars, and whole spices.' }}</p>
+    </div>
+
+    <!-- Products Grid -->
+    <div class="th-products-grid">
+      {%- assign featured_collection = collections[section.settings.collection] -%}
+      {%- assign products_limit = section.settings.products_to_show | default: 8 -%}
+
+      {%- if featured_collection != blank and featured_collection.products_count > 0 -%}
+        {%- for product in featured_collection.products limit: products_limit -%}
+          <article class="th-card">
+            <!-- Media & Badges -->
+            <div class="th-card-media">
+              {%- if product.compare_at_price > product.price -%}
+                <span class="th-card-badge">Sale</span>
+              {%- else -%}
+                <span class="th-card-badge">Bestseller</span>
+              {%- endif -%}
+
+              <span class="th-card-rating">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="#C5A880" stroke="#C5A880">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+                <span>5.0</span>
+              </span>
+
+              <a href="{{ product.url }}">
+                {%- if product.featured_image != blank -%}
+                  <img
+                    src="{{ product.featured_image | image_url: width: 720 }}"
+                    alt="{{ product.featured_image.alt | default: product.title }}"
+                    class="th-card-img"
+                    width="720"
+                    height="720"
+                    loading="lazy"
+                  >
+                {%- else -%}
+                  {{ 'product-1' | placeholder_svg_tag: 'th-card-img' }}
+                {%- endif -%}
+              </a>
+            </div>
+
+            <!-- Card Info -->
+            <div class="th-card-body">
+              <div>
+                <span class="th-card-category">{{ product.type | default: 'Pantry' }}</span>
+                <h3 class="th-card-title">
+                  <a href="{{ product.url }}">{{ product.title }}</a>
+                </h3>
+                <div class="th-card-weight">
+                  {{ product.variants.first.title | default: '500g Jar' }}
+                </div>
+              </div>
+
+              <div>
+                <!-- Price Row -->
+                <div class="th-card-price-row">
+                  <span class="th-price-main">
+                    Rs. {{ product.price | money_without_currency | remove: '.00' }}
+                  </span>
+                  {%- if product.compare_at_price > product.price -%}
+                    <span class="th-price-compare">
+                      Rs. {{ product.compare_at_price | money_without_currency | remove: '.00' }}
+                    </span>
+                  {%- endif -%}
+                </div>
+
+                <!-- Add to Cart Form & Direct WhatsApp -->
+                <div class="th-card-actions">
+                  <form method="post" action="/cart/add" class="th-card-form">
+                    <input type="hidden" name="id" value="{{ product.variants.first.id }}">
+                    <button type="submit" class="th-btn-add-cart">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                      </svg>
+                      <span>Add to Cart</span>
+                    </button>
+                  </form>
+
+                  {%- if section.settings.show_card_whatsapp and section.settings.whatsapp_phone != blank -%}
+                    {%- assign wa_text = 'Hello Taste Heven! I want to order ' | append: product.title | append: ' (Rs. ' | append: product.price | money_without_currency | remove: '.00' | append: ')' -%}
+                    <a
+                      href="https://wa.me/{{ section.settings.whatsapp_phone | remove: ' ' | remove: '+' | remove: '-' }}?text={{ wa_text | url_encode }}"
+                      target="_blank"
+                      rel="noopener"
+                      class="th-btn-card-wa"
+                    >
+                      <span>Quick WhatsApp</span>
+                    </a>
+                  {%- endif -%}
+                </div>
+              </div>
+            </div>
+          </article>
+        {%- endfor -%}
+      {%- else -%}
+        <!-- Onboarding Mock Fallback Products (Exact Taste Heven Catalog) -->
+        {%- assign sample_products = "Pure Sidr Honey 500g|2450|Honey,Traditional Mango Achar 500g|1250|Achar,Royal Kashmiri Seb Murabba 500g|1350|Murabba,Kachi Ghani Sarson Oil 1 Litre|1650|Pure Oil" | split: "," -%}
+        {%- for item in sample_products -%}
+          {%- assign parts = item | split: "|" -%}
+          <article class="th-card">
+            <div class="th-card-media">
+              <span class="th-card-badge">Bestseller</span>
+              <span class="th-card-rating">★ 5.0</span>
+              <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #faf8f5; font-size: 42px;">
+                {%- if parts[2] == 'Honey' -%}🍯{%- elsif parts[2] == 'Achar' -%}🥭{%- elsif parts[2] == 'Murabba' -%}🍎{%- else -%}🌿{%- endif -%}
+              </div>
+            </div>
+            <div class="th-card-body">
+              <div>
+                <span class="th-card-category">{{ parts[2] }}</span>
+                <h3 class="th-card-title">{{ parts[0] }}</h3>
+                <div class="th-card-weight">Standard Glass Jar</div>
+              </div>
+              <div>
+                <div class="th-card-price-row">
+                  <span class="th-price-main">Rs. {{ parts[1] }}</span>
+                </div>
+                <div class="th-card-actions">
+                  <a href="/collections/all" class="th-btn-add-cart" style="text-decoration:none;">
+                    <span>Add to Cart</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </article>
+        {%- endfor -%}
+      {%- endif -%}
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Bestsellers Grid (2 & 4)",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Section Titles"
+    },
+    {
+      "type": "text",
+      "id": "kicker_text",
+      "label": "Kicker Subtitle",
+      "default": "Pure Natural Delicacies"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Heading",
+      "default": "Signature Bestsellers"
+    },
+    {
+      "type": "textarea",
+      "id": "description",
+      "label": "Description",
+      "default": "Traditional small-batch recipes prepared with cold-pressed oils, wild Potohar nectars, and whole spices."
+    },
+    {
+      "type": "header",
+      "content": "Collection Selection"
+    },
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Select Collection"
+    },
+    {
+      "type": "range",
+      "id": "products_to_show",
+      "min": 4,
+      "max": 16,
+      "step": 2,
+      "label": "Number of Products to Show",
+      "default": 8
+    },
+    {
+      "type": "header",
+      "content": "WhatsApp Direct Ordering"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_card_whatsapp",
+      "label": "Show 'Quick WhatsApp' on each card",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "whatsapp_phone",
+      "label": "WhatsApp Number (e.g. 923248314001)",
+      "default": "923248314001"
+    },
+    {
+      "type": "header",
+      "content": "Styling"
+    },
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Background Color",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "accent_gold",
+      "label": "Accent Gold",
+      "default": "#C5A880"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Bestsellers Grid (2 & 4)",
+      "category": "Collection"
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,507 @@
+{%- comment -%}
+  Taste Heven - Style 2 Modern Minimal Luxury Hero
+  File: sections/hero-minimal.liquid
+  OS 2.0 Production Ready
+{%- endcomment -%}
+
+{%- style -%}
+  .th-hero-section-{{ section.id }} {
+    background-color: {{ section.settings.bg_color | default: '#FFFFFF' }};
+    color: #111111;
+    position: relative;
+    overflow: hidden;
+    padding: 40px 16px 60px;
+    font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  @media (min-width: 768px) {
+    .th-hero-section-{{ section.id }} {
+      padding: 70px 24px 90px;
+    }
+  }
+
+  /* Subtle Warm Golden Ambient Glow */
+  .th-hero-ambient {
+    position: absolute;
+    top: 5%;
+    right: 5%;
+    width: 380px;
+    height: 380px;
+    background: radial-gradient(circle, rgba(197, 168, 128, 0.18) 0%, rgba(255, 255, 255, 0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .th-hero-container {
+    max-width: 1240px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 36px;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  @media (min-width: 992px) {
+    .th-hero-container {
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 56px;
+    }
+  }
+
+  /* Left Editorial Column */
+  .th-hero-content {
+    text-align: left;
+  }
+
+  .th-hero-kicker-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fbf9f5;
+    border: 1px solid rgba(197, 168, 128, 0.5);
+    color: #111111;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 6px 14px;
+    border-radius: 50px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  }
+
+  .th-kicker-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: {{ section.settings.accent_gold | default: '#C5A880' }};
+  }
+
+  .th-hero-headline {
+    font-family: 'Playfair Display', 'Cinzel', serif;
+    font-size: 38px;
+    line-height: 1.1;
+    font-weight: 700;
+    color: #000000;
+    letter-spacing: -0.02em;
+    margin: 0 0 16px;
+  }
+
+  @media (min-width: 768px) {
+    .th-hero-headline {
+      font-size: 58px;
+    }
+  }
+
+  @media (min-width: 1200px) {
+    .th-hero-headline {
+      font-size: 68px;
+    }
+  }
+
+  .th-hero-headline span.gold-italic {
+    display: block;
+    font-style: italic;
+    color: {{ section.settings.accent_gold | default: '#C5A880' }};
+    font-weight: 400;
+  }
+
+  .th-hero-subheadline {
+    font-size: 15px;
+    line-height: 1.6;
+    color: #4a4a4a;
+    font-weight: 400;
+    max-width: 520px;
+    margin: 0 0 28px;
+  }
+
+  @media (min-width: 768px) {
+    .th-hero-subheadline {
+      font-size: 16px;
+    }
+  }
+
+  /* CTAs Cluster */
+  .th-hero-cta-cluster {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 34px;
+  }
+
+  .th-btn-primary {
+    background: #000000;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 15px 34px;
+    border-radius: 50px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.25s ease;
+    border: 1px solid #000000;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  }
+
+  .th-btn-primary:hover {
+    background: {{ section.settings.accent_gold | default: '#C5A880' }};
+    color: #000000;
+    border-color: {{ section.settings.accent_gold | default: '#C5A880' }};
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(197, 168, 128, 0.35);
+  }
+
+  .th-btn-whatsapp-outline {
+    background: #ffffff;
+    color: #111111;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-decoration: none;
+    padding: 14px 24px;
+    border-radius: 50px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(197, 168, 128, 0.7);
+  }
+
+  .th-btn-whatsapp-outline:hover {
+    border-color: #000000;
+    background: #fbf9f5;
+  }
+
+  /* Trust Micro Points */
+  .th-hero-trust-bar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    max-width: 520px;
+  }
+
+  .th-trust-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .th-trust-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #000000;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .th-trust-desc {
+    font-size: 11px;
+    color: #777777;
+  }
+
+  /* Right Side: Honey Dripping Jar Hero Graphic */
+  .th-hero-media {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .th-media-card {
+    position: relative;
+    width: 100%;
+    max-width: 490px;
+    aspect-ratio: 1 / 1;
+    border-radius: 36px;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(197, 168, 128, 0.35);
+  }
+
+  .th-media-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    transition: transform 0.6s ease;
+  }
+
+  .th-media-card:hover .th-media-img {
+    transform: scale(1.03);
+  }
+
+  /* Floating Luxury Floating Seal */
+  .th-floating-seal {
+    position: absolute;
+    bottom: -15px;
+    left: -15px;
+    background: #000000;
+    color: #ffffff;
+    padding: 14px 20px;
+    border-radius: 20px;
+    border: 1px solid var(--th-gold);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    z-index: 2;
+  }
+
+  @media (max-width: 576px) {
+    .th-floating-seal {
+      bottom: 12px;
+      left: 12px;
+      padding: 10px 14px;
+    }
+  }
+
+  .th-seal-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: {{ section.settings.accent_gold | default: '#C5A880' }};
+    color: #000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 13px;
+    font-family: serif;
+    flex-shrink: 0;
+  }
+
+  .th-seal-text-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+    line-height: 1.2;
+  }
+
+  .th-seal-text-sub {
+    font-size: 10px;
+    color: {{ section.settings.accent_gold | default: '#C5A880' }};
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+{%- endstyle -%}
+
+<section class="th-hero-section-{{ section.id }}" aria-label="Hero Spotlight">
+  <div class="th-hero-ambient"></div>
+
+  <div class="th-hero-container">
+    <!-- Left Column: Typography & CTAs -->
+    <div class="th-hero-content">
+      {%- if section.settings.kicker_text != blank -%}
+        <div class="th-hero-kicker-badge">
+          <span class="th-kicker-dot"></span>
+          <span>{{ section.settings.kicker_text }}</span>
+        </div>
+      {%- endif -%}
+
+      <h1 class="th-hero-headline">
+        {{ section.settings.heading_main | default: 'Eat Fresh,' }}
+        <span class="gold-italic">{{ section.settings.heading_accent | default: 'Feel Heaven.' }}</span>
+      </h1>
+
+      <p class="th-hero-subheadline">
+        {{ section.settings.subheading | default: 'Pure Honey, Achar & Murabba - Pure, Natural & Crafted with Care. Sun-cured in cold-pressed oils and wild blossom nectars.' }}
+      </p>
+
+      <div class="th-hero-cta-cluster">
+        <a href="{{ section.settings.button_link | default: '/collections/all' }}" class="th-btn-primary">
+          <span>{{ section.settings.button_label | default: 'Shop Now' }}</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
+
+        {%- if section.settings.whatsapp_number != blank -%}
+          <a
+            href="https://wa.me/{{ section.settings.whatsapp_number | remove: ' ' | remove: '+' | remove: '-' }}?text={{ 'Assalam-o-Alaikum Taste Heven! I would like to order fresh Sidr Honey and Mango Achar.' | url_encode }}"
+            target="_blank"
+            rel="noopener"
+            class="th-btn-whatsapp-outline"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#25D366">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.414-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+            </svg>
+            <span>Order via WhatsApp</span>
+          </a>
+        {%- endif -%}
+      </div>
+
+      <!-- Trust Micro Bar -->
+      <div class="th-hero-trust-bar">
+        <div class="th-trust-item">
+          <span class="th-trust-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C5A880" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            100% Khalis
+          </span>
+          <span class="th-trust-desc">Lab-tested zero sugar feeding</span>
+        </div>
+        <div class="th-trust-item">
+          <span class="th-trust-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C5A880" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            COD Pakistan
+          </span>
+          <span class="th-trust-desc">Cash on delivery nationwide</span>
+        </div>
+        <div class="th-trust-item">
+          <span class="th-trust-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C5A880" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Glass Packing
+          </span>
+          <span class="th-trust-desc">Sanitized food-grade glass</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Dripping Honey Jar Image Card -->
+    <div class="th-hero-media">
+      <div class="th-media-card">
+        {%- if section.settings.image_desktop != blank -%}
+          <picture>
+            {%- if section.settings.image_mobile != blank -%}
+              <source media="(max-width: 640px)" srcset="{{ section.settings.image_mobile | image_url: width: 720 }}">
+            {%- endif -%}
+            <img
+              src="{{ section.settings.image_desktop | image_url: width: 1080 }}"
+              alt="{{ section.settings.image_desktop.alt | default: 'Taste Heven Honey Jar' }}"
+              class="th-media-img"
+              width="1080"
+              height="1080"
+              loading="eager"
+              fetchpriority="high"
+            >
+          </picture>
+        {%- else -%}
+          <!-- Clean Fallback Luxury Dripping Jar Graphic Placeholder -->
+          <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, #fcf8f2 0%, #ede3d3 100%); padding: 30px; text-align: center;">
+            <div style="font-size: 64px; margin-bottom: 12px;">🍯</div>
+            <p style="font-family: serif; font-size: 22px; font-weight: 700; color: #111; margin: 0 0 6px;">Taste Heven Pure Sidr Honey</p>
+            <p style="font-size: 13px; color: #C5A880; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin: 0;">100% Raw Wild Harvested</p>
+            <span style="display: inline-block; margin-top: 16px; font-size: 11px; background: #000; color: #fff; padding: 6px 14px; border-radius: 20px;">Upload honey jar image in theme customizer</span>
+          </div>
+        {%- endif -%}
+
+        <!-- Floating Verified Quality Seal -->
+        <div class="th-floating-seal">
+          <div class="th-seal-badge">TH</div>
+          <div>
+            <p class="th-seal-text-title">Guaranteed Authentic</p>
+            <p class="th-seal-text-sub">Ancestral Small Batches</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Minimal Luxury Hero",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Headings & Content"
+    },
+    {
+      "type": "text",
+      "id": "kicker_text",
+      "label": "Badge / Kicker Text",
+      "default": "100% Pure & Raw · Artisanal Small Batch"
+    },
+    {
+      "type": "text",
+      "id": "heading_main",
+      "label": "Main Headline First Part",
+      "default": "Eat Fresh,"
+    },
+    {
+      "type": "text",
+      "id": "heading_accent",
+      "label": "Main Headline Gold Part",
+      "default": "Feel Heaven."
+    },
+    {
+      "type": "textarea",
+      "id": "subheading",
+      "label": "Subheading Description",
+      "default": "Pure Honey, Achar & Murabba - Pure, Natural & Crafted with Care. Sun-cured in cold-pressed mustard oil and wild flower nectars."
+    },
+    {
+      "type": "header",
+      "content": "Call To Action"
+    },
+    {
+      "type": "text",
+      "id": "button_label",
+      "label": "Button Label",
+      "default": "Shop Now"
+    },
+    {
+      "type": "url",
+      "id": "button_link",
+      "label": "Button Link",
+      "default": "/collections/all"
+    },
+    {
+      "type": "text",
+      "id": "whatsapp_number",
+      "label": "WhatsApp Number (e.g. 923248314001)",
+      "default": "923248314001"
+    },
+    {
+      "type": "header",
+      "content": "Hero Images (1080x1080 Recommended)"
+    },
+    {
+      "type": "image_picker",
+      "id": "image_desktop",
+      "label": "Desktop Honey Jar Image"
+    },
+    {
+      "type": "image_picker",
+      "id": "image_mobile",
+      "label": "Mobile Honey Jar Image (Optional)"
+    },
+    {
+      "type": "header",
+      "content": "Theme Styling"
+    },
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Background Color",
+      "default": "#FFFFFF"
+    },
+    {
+      "type": "color",
+      "id": "accent_gold",
+      "label": "Accent Gold",
+      "default": "#C5A880"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Minimal Luxury Hero",
+      "category": "Hero"
+    }
+  ]
+}
+{% endschema %}

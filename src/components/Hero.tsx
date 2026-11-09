@@ -1,8 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { MessageCircle, ArrowRight, ShieldCheck, HeartHandshake, Sparkles, Truck } from 'lucide-react';
+import { ShieldCheck, HeartHandshake, ArrowRight, MessageCircle, Sparkles, Award } from 'lucide-react';
 import { generateGeneralInquiryWhatsAppUrl } from '../utils/whatsapp';
-import { TasteHevenLogo } from './TasteHevenLogo';
 
 export const DEFAULT_HERO_BANNER = '/src/assets/images/taste_heaven_hero_banner_1791803683564.jpg';
 
@@ -12,160 +11,119 @@ interface HeroProps {
 }
 
 export const Hero: React.FC<HeroProps> = ({ onExploreClick, bannerImage }) => {
-  const activeBanner = bannerImage || DEFAULT_HERO_BANNER;
+  const currentBanner = bannerImage || DEFAULT_HERO_BANNER;
 
   return (
-    <section id="hero" className="relative bg-white overflow-hidden border-b border-[#0A0A0A]/10">
-      {/* Subtle luxury ambient gold glow */}
-      <div className="absolute inset-0 pointer-events-none opacity-40">
-        <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-[#D4AF37]/10 blur-3xl" />
-        <div className="absolute top-1/2 -right-32 w-96 h-96 rounded-full bg-[#D4AF37]/15 blur-3xl" />
+    <section
+      id="hero"
+      className="relative bg-[#0A0A0A] text-[#F9F5EB] overflow-hidden border-b border-[#D4AF37]/20 select-none"
+    >
+      {/* 1. Subtle Luxury Ambient Studio Background & Radial Glows */}
+      <div className="absolute inset-0 pointer-events-none">
+        {/* Soft radial golden aura behind the center banner */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[550px] bg-gradient-to-b from-[#D4AF37]/15 via-[#D4AF37]/5 to-transparent rounded-full blur-[120px]" />
+        {/* Secondary warm ambient flares */}
+        <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-[#C9A86A]/10 blur-3xl" />
+        <div className="absolute top-1/2 -right-32 w-96 h-96 rounded-full bg-[#D4AF37]/10 blur-3xl" />
+        {/* Minimal studio grid vignette */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#0A0A0A_85%)] opacity-80" />
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-16 lg:pt-20 lg:pb-28">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-          {/* Left Column: Sweetgreen Layout with Luxury Black & Gold Typography */}
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16 lg:pt-12 lg:pb-24">
+        {/* Top Minimal Pill Kicker */}
+        <div className="flex justify-center mb-5">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
-            className="lg:col-span-7 space-y-7 text-left"
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="inline-flex items-center gap-2 text-xs font-mono font-medium tracking-widest text-[#D4AF37] uppercase bg-black/60 border border-[#D4AF37]/40 px-4 py-1.5 rounded-full shadow-lg backdrop-blur-md"
           >
-            {/* Luxury Kicker */}
-            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#0A0A0A] bg-white border border-[#D4AF37]/50 px-4 py-1.5 rounded-full shadow-2xs">
-              <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
-              <span>100% Raw · Khalis · Fine Food Experience</span>
-            </div>
-
-            {/* Main Headline */}
-            <div className="space-y-4">
-              <h1 className="font-serif text-5xl sm:text-7xl lg:text-[5.5rem] font-bold text-[#0A0A0A] leading-[1.0] tracking-tight">
-                Eat Fresh,
-                <span className="block font-serif italic font-normal text-[#D4AF37] mt-1">
-                  Feel Heaven.
-                </span>
-              </h1>
-              
-              <div className="pt-2 space-y-2">
-                <p
-                  style={{ fontFamily: 'var(--font-cinzel), serif' }}
-                  className="text-xl sm:text-2xl font-bold tracking-[0.08em] uppercase text-[#0A0A0A]"
-                >
-                  TASTE HEVEN
-                  <span className="text-[#D4AF37] text-sm sm:text-base font-medium normal-case block sm:inline sm:ml-3 font-serif italic tracking-normal">
-                    — Pure Honey, Achar & Murabba
-                  </span>
-                </p>
-                <p className="text-sm sm:text-base text-stone-600 max-w-xl leading-relaxed">
-                  Handcrafted with heirloom recipes and nature’s rarest harvests. From wild Sidr berry blooms
-                  to sun-cured spicy mango achar in pure mustard oil and saffron-steeped royal Kashmiri murabbay.
-                </p>
-              </div>
-            </div>
-
-            {/* Clean Trust Tags with Gold Accents */}
-            <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-[#0A0A0A] pt-1">
-              <span className="flex items-center gap-1.5 bg-stone-50 border border-[#D4AF37]/40 px-4 py-2 rounded-full shadow-2xs">
-                <ShieldCheck className="w-4 h-4 text-[#D4AF37]" />
-                Zero Sugar Adulteration
-              </span>
-              <span className="flex items-center gap-1.5 bg-stone-50 border border-[#D4AF37]/40 px-4 py-2 rounded-full shadow-2xs">
-                <HeartHandshake className="w-4 h-4 text-[#B91C1C]" />
-                Pure Mustard Oil (Sarson)
-              </span>
-              <span className="flex items-center gap-1.5 bg-stone-50 border border-[#D4AF37]/40 px-4 py-2 rounded-full shadow-2xs">
-                <Truck className="w-4 h-4 text-[#D4AF37]" />
-                Cash on Delivery Pakistan
-              </span>
-            </div>
-
-            {/* CTA Buttons in Luxury Rounded Style */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-3">
-              <button
-                onClick={onExploreClick}
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#0A0A0A] hover:bg-[#1A1A1A] text-white hover:text-[#D4AF37] border border-[#D4AF37]/60 font-bold text-sm rounded-full shadow-sm hover:shadow-md transition-all group cursor-pointer"
-              >
-                <span>Shop Pure Collection</span>
-                <ArrowRight className="w-4 h-4 text-[#D4AF37] group-hover:translate-x-1 transition-transform" />
-              </button>
-
-              <a
-                href={generateGeneralInquiryWhatsAppUrl('I would like to order Khalis Honey, Achar, and Murabba')}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-[#D4AF37] hover:bg-[#F9E498] text-[#0A0A0A] font-bold text-sm rounded-full shadow-sm hover:shadow transition-all"
-              >
-                <MessageCircle className="w-4 h-4 fill-[#0A0A0A] text-[#0A0A0A]" />
-                <span>Quick Order WhatsApp</span>
-              </a>
-            </div>
-
-            {/* Metrics Strip */}
-            <div className="grid grid-cols-3 gap-6 pt-6 border-t border-[#0A0A0A]/10 max-w-lg">
-              <div>
-                <p className="font-serif text-3xl sm:text-4xl font-bold text-[#0A0A0A] tabular-nums">100%</p>
-                <p className="text-xs text-[#0A0A0A]/70 font-semibold mt-0.5">Khalis Guarantee</p>
-              </div>
-              <div>
-                <p className="font-serif text-3xl sm:text-4xl font-bold text-[#D4AF37] tabular-nums">4.9 ★</p>
-                <p className="text-xs text-[#0A0A0A]/70 font-semibold mt-0.5">1,840+ Verified Reviews</p>
-              </div>
-              <div>
-                <p className="font-serif text-3xl sm:text-4xl font-bold text-[#0A0A0A] tabular-nums">2-4 Days</p>
-                <p className="text-xs text-[#0A0A0A]/70 font-semibold mt-0.5">Express Nationwide COD</p>
-              </div>
-            </div>
+            <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+            <span>TASTE HEVEN · FINE FOOD EXPERIENCE</span>
           </motion.div>
+        </div>
 
-          {/* Right Column: Hero Image with subtle parallax y: -20 and Brand Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: -20 }}
-            transition={{ duration: 0.4, delay: 0.07, ease: [0.16, 1, 0.3, 1] }}
-            style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
-            className="lg:col-span-5 relative"
+        {/* 2. Text Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="text-center max-w-3xl mx-auto space-y-3 pt-1"
+        >
+          {/* Main Heading */}
+          <h1
+            style={{ fontFamily: 'var(--font-cinzel), serif' }}
+            className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-[0.08em] text-[#FFFFFF] uppercase drop-shadow-md"
           >
-            <div className="relative rounded-[36px] overflow-hidden bg-white border border-[#0A0A0A]/10 shadow-xl aspect-4/3 sm:aspect-16/11 lg:aspect-4/3 group">
-              <img
-                key={activeBanner}
-                src={activeBanner}
-                alt="Taste Heven Pure Honey, Spicy Achar and Lazeez Murabba Jars"
-                referrerPolicy="no-referrer"
-                decoding="async"
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = DEFAULT_HERO_BANNER;
-                }}
-                className="w-full h-full object-cover object-center group-hover:scale-[1.03] transition-transform duration-700 ease-out"
-              />
+            Eat Fresh, Feel Heaven
+          </h1>
 
-              {/* Measured contrast scrim */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+          {/* Subtitle */}
+          <p className="text-xs sm:text-sm lg:text-base font-semibold tracking-[0.2em] text-[#D4AF37] uppercase">
+            Pure Honey, Achar & Murabba · Pure, Natural & Crafted with Care
+          </p>
 
-              {/* Floating official circular badge emblem at top right corner */}
-              <div className="absolute top-4 right-4 z-10 drop-shadow-2xl">
-                <TasteHevenLogo variant="badge" size={74} />
-              </div>
+          {/* Heritage Story */}
+          <p className="text-xs sm:text-sm text-neutral-300 max-w-2xl mx-auto leading-relaxed pt-1 font-medium">
+            Raw Sidr and wildflower honey, sun-matured mango & garlic pickles in pure cold-pressed sarson oil, and royal fruit murabbay prepared with traditional heritage recipes.
+          </p>
 
-              {/* Floating artisanal tag on bottom */}
-              <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-xl border border-[#D4AF37]/40 p-4 rounded-[24px] flex items-center justify-between text-left shadow-lg">
-                <div>
-                  <p className="text-xs font-bold text-[#0A0A0A]">
-                    Taste Heven Artisanal Pantry
-                  </p>
-                  <p className="text-[11px] text-stone-600 font-medium">
-                    Sanitized food-grade glass jars · Zero chemicals
-                  </p>
-                </div>
-                <div className="text-right">
-                  <span className="text-[11px] font-bold text-[#0A0A0A] bg-stone-100 border border-[#D4AF37]/50 px-3 py-1 rounded-full">
-                    COD & EasyPaisa
-                  </span>
-                </div>
-              </div>
-            </div>
-          </motion.div>
+          {/* Action Buttons: SHOP NOW & ORDER ON WHATSAPP */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+            <button
+              onClick={onExploreClick}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-3.5 bg-[#D4AF37] hover:bg-[#c49f2e] text-[#0A0A0A] font-extrabold text-xs sm:text-sm tracking-wider uppercase rounded-full shadow-lg shadow-[#D4AF37]/25 hover:shadow-xl hover:shadow-[#D4AF37]/40 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
+            >
+              <span>SHOP NOW</span>
+              <ArrowRight className="w-4 h-4 text-[#0A0A0A]" />
+            </button>
+
+            <a
+              href={generateGeneralInquiryWhatsAppUrl('Hero Banner Order Link')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-transparent hover:bg-[#D4AF37]/10 text-[#D4AF37] hover:text-[#FFFFFF] border-2 border-[#D4AF37] font-bold text-xs sm:text-sm tracking-wider uppercase rounded-full shadow-sm hover:border-[#F9F5EB] transition-all duration-300 cursor-pointer"
+            >
+              <MessageCircle className="w-4 h-4 text-[#D4AF37]" />
+              <span>ORDER ON WHATSAPP</span>
+            </a>
+          </div>
+        </motion.div>
+
+        {/* 3. Hero Banner Image Showcase */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+          className="relative mt-8 sm:mt-10 max-w-5xl mx-auto rounded-3xl overflow-hidden border border-[#D4AF37]/40 shadow-2xl shadow-black/80 group"
+        >
+          <img
+            src={currentBanner}
+            alt="Taste Heven Artisanal Jars - Pure Honey, Spicy Mango Achar, Glistening Murabba"
+            className="w-full h-auto max-h-[500px] object-cover sm:object-center transform group-hover:scale-[1.01] transition-transform duration-700"
+            loading="eager"
+            decoding="sync"
+          />
+          {/* Subtle gradient overlay at bottom edge */}
+          <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60" />
+        </motion.div>
+
+        {/* 4. Bottom Trust Badges */}
+        <div className="flex flex-wrap items-center justify-center gap-3.5 pt-8">
+          <div className="inline-flex items-center gap-2 bg-white text-[#0A0A0A] font-semibold text-xs sm:text-sm px-5 py-2.5 rounded-full shadow-md border border-[#D4AF37]/40">
+            <ShieldCheck className="w-4 h-4 text-[#D4AF37] shrink-0" />
+            <span>100% Khalis & Pure Guarantee</span>
+          </div>
+
+          <div className="inline-flex items-center gap-2 bg-white text-[#0A0A0A] font-semibold text-xs sm:text-sm px-5 py-2.5 rounded-full shadow-md border border-[#D4AF37]/40">
+            <HeartHandshake className="w-4 h-4 text-[#DC2626] shrink-0" />
+            <span>Cold-Pressed Sarson (Mustard) Oil</span>
+          </div>
+
+          <div className="inline-flex items-center gap-2 bg-white text-[#0A0A0A] font-semibold text-xs sm:text-sm px-5 py-2.5 rounded-full shadow-md border border-[#D4AF37]/40">
+            <Award className="w-4 h-4 text-[#D4AF37] shrink-0" />
+            <span>Cash On Delivery Nationwide</span>
+          </div>
         </div>
       </div>
     </section>

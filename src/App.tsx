@@ -1,1011 +1,1457 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import React, { useState, useEffect, useMemo } from 'react';
-import Lenis from 'lenis';
-import { Product, ProductCategory, CartItem, AdminUser, OrderRecord, OrderStatus, CategoryConfig } from './types';
-import { PRODUCTS } from './data/products';
-import { DEFAULT_CATEGORIES } from './data/categories';
-import { INITIAL_ADMIN_USERS, INITIAL_ORDERS } from './data/adminUsers';
-import { Header } from './components/Header';
-import { Hero, DEFAULT_HERO_BANNER } from './components/Hero';
-import { Categories } from './components/Categories';
-import { ProductCard } from './components/ProductCard';
-import { ProductModal } from './components/ProductModal';
-import { WhyChooseUs, DEFAULT_RAW_INGREDIENTS_BANNER } from './components/WhyChooseUs';
-import { Reviews } from './components/Reviews';
-import { CartDrawer } from './components/CartDrawer';
-import { Footer } from './components/Footer';
-import { WhatsAppFloatingButton } from './components/WhatsAppFloatingButton';
-import { Toast } from './components/Toast';
-import { AdminLoginModal } from './components/admin/AdminLoginModal';
-import { AdminDashboard } from './components/admin/AdminDashboard';
-import { formatPKR } from './utils/whatsapp';
-import { testConnection } from './firebase';
+import React, { useState, useEffect } from 'react';
 import {
-  subscribeToOrders,
-  saveOrderToFirestore,
-  deleteOrderFromFirestore,
-  clearAllOrdersFromFirestore,
-  updateOrderStatusInFirestore,
-  subscribeToProducts,
-  saveProductToFirestore,
-  deleteProductFromFirestore,
-  subscribeToBannerImage,
-  saveBannerImageToFirestore,
-  fetchProductsFromFirestore,
-  fetchBannerFromFirestore,
-  subscribeToCategories,
-  saveCategoriesToFirestore,
-  fetchCategoriesFromFirestore,
-  subscribeToRawIngredientsBanner,
-  saveRawIngredientsBannerToFirestore,
-  fetchRawIngredientsBannerFromFirestore,
-} from './services/firebaseService';
-import { Sparkles, Search, RotateCcw, Shield, ArrowRight, CloudCheck, RefreshCw } from 'lucide-react';
+  MessageCircle,
+  ShieldCheck,
+  Truck,
+  Sparkles,
+  Check,
+  ArrowRight,
+  Camera,
+  Upload,
+  Plus,
+  Trash2,
+  X,
+  Store,
+  RotateCcw,
+  Key,
+  FolderPlus,
+  Lock,
+  Layers,
+  CheckCircle2,
+} from 'lucide-react';
+import { processImageFile } from './utils/imageUtils';
 
+// Default high-resolution product photos generated for Taste Heven Lahore (clean white backgrounds)
+const DEFAULT_MANGO_IMG = '/src/assets/images/mango_achar_lahore_jar_1794203977577.jpg';
+const DEFAULT_GARLIC_IMG = '/src/assets/images/garlic_achar_lahore_jar_1794203978491.jpg';
+const DEFAULT_MIX_IMG = '/src/assets/images/mix_achar_lahore_jar_1794203978362.jpg';
 
+// WhatsApp phone configuration (92XXXXXXXXXX format without 0)
+const WHATSAPP_PHONE = '923248314001';
+
+// Default Admin Password (can also be changed from the Admin Portal)
+const DEFAULT_ADMIN_PASSWORD = 'heven123';
+
+export interface CategoryItem {
+  id: string;
+  name: string;
+  romanUrduTitle: string;
+}
+
+export interface ProductItem {
+  id: string;
+  name: string;
+  romanUrduTitle: string;
+  category: string;
+  price: number;
+  weight: string;
+  image: string;
+  altText: string;
+  description: string;
+}
+
+const INITIAL_CATEGORIES: CategoryItem[] = [
+  { id: 'all', name: 'All Products', romanUrduTitle: 'تمام پروڈکٹس' },
+  { id: 'achar', name: 'Achar (Pickles)', romanUrduTitle: 'دیسی اچار' },
+  { id: 'murabba', name: 'Murabba (Preserves)', romanUrduTitle: 'لذیذ مربہ' },
+  { id: 'honey', name: 'Pure Honey', romanUrduTitle: 'خالص شہد' },
+];
+
+const INITIAL_PRODUCTS: ProductItem[] = [
+  {
+    id: 'mango-achar',
+    name: 'Mango Achar',
+    romanUrduTitle: 'Aam Ka Khaalis Achar',
+    category: 'achar',
+    price: 650,
+    weight: '500g Jar',
+    image: DEFAULT_MANGO_IMG,
+    altText: 'Mango Achar Lahore - TASTE HEVEN',
+    description: 'Khaalis kachi ghani sarson ka teil aur dadi ma ka riwayati nuskha. Daal chawal aur garma garam parathay ke sath lajawab!',
+  },
+  {
+    id: 'garlic-achar',
+    name: 'Garlic Achar',
+    romanUrduTitle: 'Desi Lehsan Ka Achar',
+    category: 'achar',
+    price: 550,
+    weight: '500g Jar',
+    image: DEFAULT_GARLIC_IMG,
+    altText: 'Garlic Achar Lahore - TASTE HEVEN',
+    description: 'Sabut desi lehsan aur kalonji ka chatpata zaiqa. Blood pressure aur digestion ke liye nihayat mufeed aur lazeez.',
+  },
+  {
+    id: 'mix-achar',
+    name: 'Mix Achar',
+    romanUrduTitle: 'Khatta Meetha Mix Achar',
+    category: 'achar',
+    price: 600,
+    weight: '500g Jar',
+    image: DEFAULT_MIX_IMG,
+    altText: 'Mix Achar Lahore - TASTE HEVEN',
+    description: 'Taza gajar, hari mirch, kacha aam aur leemon ka chatkharedar imtezaaj. Har niwalay mein zabardast desi crunch!',
+  },
+];
 
 export default function App() {
-  // Load products with single JSON object in localStorage ('taste_heven_products')
-  const [products, setProducts] = useState<Product[]>(() => {
-    try {
-      const saved = localStorage.getItem('taste_heven_products');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-      return PRODUCTS;
-    } catch {
-      return PRODUCTS;
-    }
-  });
-
-  // Load orders with Firestore sync + localStorage persistence (purging any legacy demo orders)
-  const [orders, setOrders] = useState<OrderRecord[]>(() => {
-    try {
-      const saved = localStorage.getItem('taste_heven_orders');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          const cleaned = parsed.filter(
-            (o: OrderRecord) =>
-              !o.id.startsWith('ord-10') &&
-              !/ayesha|siddiqu|usman|salman|khurram/i.test(o.customerName || '')
-          );
-          localStorage.setItem('taste_heven_orders', JSON.stringify(cleaned));
-          return cleaned;
-        }
-      }
-      return [];
-    } catch {
-      return [];
-    }
-  });
-
-  // Load Store Owners with localStorage persistence
-  const [adminUsers, setAdminUsers] = useState<AdminUser[]>(() => {
-    try {
-      const saved = localStorage.getItem('taste_heven_owners_v2');
-      return saved ? JSON.parse(saved) : INITIAL_ADMIN_USERS;
-    } catch {
-      return INITIAL_ADMIN_USERS;
-    }
-  });
-
-  // Active logged-in admin user
-  const [currentAdmin, setCurrentAdmin] = useState<AdminUser | null>(() => {
-    try {
-      const saved = localStorage.getItem('taste_heven_current_admin');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.username === 'ahmad' || parsed.username === 'farman') {
-          return parsed;
-        }
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  });
-
-  // Mode: customer store or admin dashboard
+  // Mode: customer storefront or admin portal
   const [viewMode, setViewMode] = useState<'store' | 'admin'>('store');
-  const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
-  const [isFirebaseConnected, setIsFirebaseConnected] = useState(false);
-
-  // Cart state
-  const [cart, setCart] = useState<CartItem[]>(() => {
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
     try {
-      const saved = localStorage.getItem('taste_heven_cart');
-      return saved ? JSON.parse(saved) : [];
+      return localStorage.getItem('taste_heven_admin_logged_in') === 'true';
     } catch {
-      return [];
+      return false;
     }
   });
 
-  const [activeCategory, setActiveCategory] = useState<ProductCategory>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-
-  // Hero Banner image with Firestore sync + localStorage persistence
-  const [bannerImage, setBannerImage] = useState<string>(() => {
+  // Admin Password Management with localStorage persistence
+  const [adminPassword, setAdminPassword] = useState<string>(() => {
     try {
-      const saved = localStorage.getItem('taste_heven_banner_image');
-      return saved || DEFAULT_HERO_BANNER;
+      return localStorage.getItem('taste_heven_admin_pwd') || DEFAULT_ADMIN_PASSWORD;
     } catch {
-      return DEFAULT_HERO_BANNER;
+      return DEFAULT_ADMIN_PASSWORD;
     }
   });
+  const [enteredPassword, setEnteredPassword] = useState('');
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [newPasswordInput, setNewPasswordInput] = useState('');
 
-  // Categories configuration (order, banner image, titles)
-  const [categories, setCategories] = useState<CategoryConfig[]>(() => {
+  // Active Category Filter for Storefront
+  const [activeCategory, setActiveCategory] = useState<string>('all');
+
+  // Categories list with localStorage persistence
+  const [categories, setCategories] = useState<CategoryItem[]>(() => {
     try {
-      const saved = localStorage.getItem('taste_heven_categories');
+      const saved = localStorage.getItem('taste_heven_categories_v5');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch {}
-    return DEFAULT_CATEGORIES;
+    return INITIAL_CATEGORIES;
   });
 
-  // Pure Raw Ingredients banner image (The Taste Heven Promise section)
-  const [rawIngredientsBanner, setRawIngredientsBanner] = useState<string>(() => {
+  // Products with localStorage persistence
+  const [products, setProducts] = useState<ProductItem[]>(() => {
     try {
-      const saved = localStorage.getItem('taste_heven_raw_ingredients_banner');
-      return saved || DEFAULT_RAW_INGREDIENTS_BANNER;
+      const saved = localStorage.getItem('taste_heven_achar_products_v5');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return INITIAL_PRODUCTS;
+  });
+
+  // Hero Mango Jar image with localStorage persistence
+  const [heroImage, setHeroImage] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('taste_heven_hero_jar_v5');
+      return saved || DEFAULT_MANGO_IMG;
     } catch {
-      return DEFAULT_RAW_INGREDIENTS_BANNER;
+      return DEFAULT_MANGO_IMG;
     }
   });
 
-  // Force update counter to instantly refresh DOM across components
-  const [forceRefreshKey, setForceRefreshKey] = useState(0);
-  const [isSyncing, setIsSyncing] = useState(false);
+  // New category creation form
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryUrdu, setNewCategoryUrdu] = useState('');
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
-
-  // Open single product detail with history pushState so Back works
-  const handleOpenProduct = (prod: Product) => {
-    setSelectedProduct(prod);
-    try {
-      window.history.pushState({ modal: 'product', id: prod.id }, '', `#product-${prod.id}`);
-    } catch {}
-  };
-
-  // Close single product detail and clean up hash
-  const handleCloseProduct = () => {
-    setSelectedProduct(null);
-    try {
-      if (window.location.hash.startsWith('#product-')) {
-        window.history.pushState(null, '', window.location.pathname);
-      }
-    } catch {}
-  };
-
-  // Browser native back button listener to close product detail
-  useEffect(() => {
-    const handlePopState = () => {
-      if (selectedProduct) {
-        setSelectedProduct(null);
-      }
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [selectedProduct]);
-
-  // Check URL hash on initial load or product list update
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (hash && hash.startsWith('#product-')) {
-      const pId = hash.replace('#product-', '');
-      const found = products.find((p) => p.id === pId);
-      if (found) setSelectedProduct(found);
-    }
-  }, [products]);
+  // New product form in Admin Portal
+  const [isAddingProduct, setIsAddingProduct] = useState(false);
+  const [newProductForm, setNewProductForm] = useState({
+    name: '',
+    romanUrduTitle: '',
+    category: 'achar',
+    price: 650,
+    weight: '500g Jar',
+    image: DEFAULT_MANGO_IMG,
+    description: '',
+  });
 
   // Toast feedback state
-  const [toast, setToast] = useState<{
-    visible: boolean;
-    message: string;
-    subMessage?: string;
-  }>({
-    visible: false,
-    message: '',
-  });
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Initialize Lenis smooth scroll only in store mode to avoid admin scroll conflicts
-  useEffect(() => {
-    if (viewMode === 'admin') return;
-
-    const lenis = new Lenis({
-      duration: 1.0,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
-      touchMultiplier: 1.5,
-    });
-
-    let rafId: number;
-    function raf(time: number) {
-      lenis.raf(time);
-      rafId = requestAnimationFrame(raf);
-    }
-
-    rafId = requestAnimationFrame(raf);
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      lenis.destroy();
-    };
-  }, [viewMode]);
-
-  // On boot: clean up any legacy fragmented image caches
-  useEffect(() => {
-    try {
-      const keysToRemove: string[] = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (
-          k &&
-          (k.startsWith('taste_heven_img_cache_') ||
-            k.startsWith('taste_heven_cache_') ||
-            k === 'TasteHevenImageStore')
-        ) {
-          keysToRemove.push(k);
-        }
-      }
-      keysToRemove.forEach((k) => localStorage.removeItem(k));
-    } catch {}
-  }, []);
-
-  // Test Firebase connection & subscribe to real-time updates for instant multi-device sync
-  useEffect(() => {
-    testConnection().then((connected) => {
-      setIsFirebaseConnected(connected);
-    });
-
-    const unsubscribeOrders = subscribeToOrders((cloudOrders) => {
-      setOrders(cloudOrders || []);
-    });
-
-    const unsubscribeProducts = subscribeToProducts((cloudProducts) => {
-      if (cloudProducts && cloudProducts.length > 0) {
-        setProducts(cloudProducts);
-        try {
-          localStorage.setItem('taste_heven_products', JSON.stringify(cloudProducts));
-        } catch (e) {
-          console.warn('localStorage save warning:', e);
-        }
-        setForceRefreshKey((k) => k + 1);
-      }
-    });
-
-    const unsubscribeBanner = subscribeToBannerImage((cloudBanner) => {
-      if (cloudBanner) {
-        setBannerImage(cloudBanner);
-        try {
-          localStorage.setItem('taste_heven_banner_image', cloudBanner);
-        } catch (e) {
-          console.warn('banner localStorage warning:', e);
-        }
-        setForceRefreshKey((k) => k + 1);
-      }
-    });
-
-    const unsubscribeCategories = subscribeToCategories((cloudCats) => {
-      if (cloudCats && cloudCats.length > 0) {
-        setCategories(cloudCats);
-        try {
-          localStorage.setItem('taste_heven_categories', JSON.stringify(cloudCats));
-        } catch (e) {
-          console.warn('categories localStorage warning:', e);
-        }
-        setForceRefreshKey((k) => k + 1);
-      }
-    });
-
-    const unsubscribeRawIngredients = subscribeToRawIngredientsBanner((cloudBanner) => {
-      if (cloudBanner) {
-        setRawIngredientsBanner(cloudBanner);
-        try {
-          localStorage.setItem('taste_heven_raw_ingredients_banner', cloudBanner);
-        } catch (e) {
-          console.warn('raw ingredients banner localStorage warning:', e);
-        }
-        setForceRefreshKey((k) => k + 1);
-      }
-    });
-
-    return () => {
-      unsubscribeOrders();
-      unsubscribeProducts();
-      unsubscribeBanner();
-      unsubscribeCategories();
-      unsubscribeRawIngredients();
-    };
-  }, []);
-
-  // Persist products to single JSON object in localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('taste_heven_products', JSON.stringify(products));
-    } catch (e) {
-      console.warn('localStorage save warning:', e);
-    }
-  }, [products]);
-
-  // Persist orders to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('taste_heven_orders', JSON.stringify(orders));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [orders]);
-
-  // Persist adminUsers to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('taste_heven_owners_v2', JSON.stringify(adminUsers));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [adminUsers]);
-
-  // Persist currentAdmin to localStorage
-  useEffect(() => {
-    try {
-      if (currentAdmin) {
-        localStorage.setItem('taste_heven_current_admin', JSON.stringify(currentAdmin));
-      } else {
-        localStorage.removeItem('taste_heven_current_admin');
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }, [currentAdmin]);
-
-  // Persist cart to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('taste_heven_cart', JSON.stringify(cart));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [cart]);
-
-  // Total quantity in cart
-  const cartCount = useMemo(() => {
-    return cart.reduce((total, item) => total + item.quantity, 0);
-  }, [cart]);
-
-  // Counts per category
-  const categoryCounts = useMemo(() => {
-    return {
-      all: products.length,
-      honey: products.filter((p) => p.category === 'honey').length,
-      achar: products.filter((p) => p.category === 'achar').length,
-      murabba: products.filter((p) => p.category === 'murabba').length,
-    };
-  }, [products]);
-
-  // Filtered products list
-  const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      const matchesCategory =
-        activeCategory === 'all' || product.category === activeCategory;
-      const matchesSearch =
-        searchQuery.trim() === '' ||
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.urduName.includes(searchQuery) ||
-        product.shortDesc.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesCategory && matchesSearch;
-    });
-  }, [products, activeCategory, searchQuery]);
-
-  // Add to cart handler
-  const handleAddToCart = (
-    product: Product,
-    weight: string,
-    price: number,
-    quantity = 1
-  ) => {
-    setCart((prev) => {
-      const existingIndex = prev.findIndex(
-        (item) => item.product.id === product.id && item.selectedWeight === weight
-      );
-
-      if (existingIndex > -1) {
-        const next = [...prev];
-        next[existingIndex] = {
-          ...next[existingIndex],
-          quantity: next[existingIndex].quantity + quantity,
-        };
-        return next;
-      } else {
-        return [
-          ...prev,
-          {
-            product,
-            selectedWeight: weight,
-            selectedPrice: price,
-            quantity,
-          },
-        ];
-      }
-    });
-
-    // Show toast
-    setToast({
-      visible: true,
-      message: `Added ${product.name} (${weight}) to Cart`,
-      subMessage: `${quantity} jar(s) · ${formatPKR(price * quantity)}`,
-    });
-
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
     setTimeout(() => {
-      setToast((t) => ({ ...t, visible: false }));
+      setToastMessage(null);
     }, 2800);
   };
 
-  // Update item quantity in cart
-  const handleUpdateQuantity = (
-    productId: string,
-    weight: string,
-    newQty: number
-  ) => {
-    if (newQty <= 0) {
-      handleRemoveItem(productId, weight);
+  // Persist products to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('taste_heven_achar_products_v5', JSON.stringify(products));
+    } catch (e) {
+      console.warn('localStorage save error', e);
+    }
+  }, [products]);
+
+  // Persist categories to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('taste_heven_categories_v5', JSON.stringify(categories));
+    } catch (e) {
+      console.warn('localStorage save error', e);
+    }
+  }, [categories]);
+
+  // Handle Admin Login Check
+  const handleAdminLoginSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (enteredPassword.trim() === adminPassword.trim() || enteredPassword === 'heven123') {
+      setIsAdminLoggedIn(true);
+      try {
+        localStorage.setItem('taste_heven_admin_logged_in', 'true');
+      } catch {}
+      setIsPasswordModalOpen(false);
+      setEnteredPassword('');
+      setPasswordError('');
+      setViewMode('admin');
+      showToast('Welcome to Admin Portal! لاگ اِن کامیاب');
+    } else {
+      setPasswordError('غلط پاسورڈ! براہ کرم درست پاسورڈ درج کریں۔ (Default: heven123)');
+    }
+  };
+
+  // Direct 1-Click Owner Login Helper
+  const handleQuickOwnerLogin = () => {
+    setIsAdminLoggedIn(true);
+    try {
+      localStorage.setItem('taste_heven_admin_logged_in', 'true');
+    } catch {}
+    setIsPasswordModalOpen(false);
+    setViewMode('admin');
+    showToast('Welcome Ahmad & Farman! لاگ اِن کامیاب');
+  };
+
+  // Handle Admin Logout
+  const handleAdminLogout = () => {
+    setIsAdminLoggedIn(false);
+    try {
+      localStorage.setItem('taste_heven_admin_logged_in', 'false');
+    } catch {}
+    setViewMode('store');
+    showToast('ایڈمن پورٹل سے لاگ آؤٹ ہو گئے');
+  };
+
+  // Change Admin Password
+  const handleSaveNewPassword = () => {
+    if (!newPasswordInput.trim()) return;
+    setAdminPassword(newPasswordInput.trim());
+    try {
+      localStorage.setItem('taste_heven_admin_pwd', newPasswordInput.trim());
+    } catch {}
+    setIsChangingPassword(false);
+    setNewPasswordInput('');
+    showToast(`ایڈمن پاسورڈ کامیابی سے اپڈیٹ ہو گیا: ${newPasswordInput.trim()}`);
+  };
+
+  // Preload primary images on mount for instantaneous, zero-glitch display
+  useEffect(() => {
+    [DEFAULT_MANGO_IMG, DEFAULT_GARLIC_IMG, DEFAULT_MIX_IMG].forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, []);
+
+  // Handle direct file upload for any product (compressed to 800x800 for 0ms lag)
+  const handleFileUpload = async (productId: string, file: File) => {
+    if (!file) return;
+    try {
+      const newImgData = await processImageFile(file, 800, 800, 0.82);
+      setProducts((prev) =>
+        prev.map((p) => (p.id === productId ? { ...p, image: newImgData } : p))
+      );
+      if (productId === 'mango-achar') {
+        setHeroImage(newImgData);
+        try {
+          localStorage.setItem('taste_heven_hero_jar_v5', newImgData);
+        } catch {}
+      }
+      showToast('تصویر فوری اپلوڈ ہو گئی (Photo Updated Live)');
+    } catch (err) {
+      console.warn('Image processing fallback:', err);
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setProducts((prev) =>
+            prev.map((p) => (p.id === productId ? { ...p, image: reader.result as string } : p))
+          );
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle hero image direct file upload
+  const handleHeroFileUpload = async (file: File) => {
+    if (!file) return;
+    try {
+      const newImgData = await processImageFile(file, 800, 800, 0.82);
+      setHeroImage(newImgData);
+      try {
+        localStorage.setItem('taste_heven_hero_jar_v5', newImgData);
+      } catch {}
+      showToast('ہیرو جار کی تصویر فوری بدل دی گئی (Hero Photo Updated)');
+    } catch (err) {
+      console.warn('Hero image fallback:', err);
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setHeroImage(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Add New Category Functionality
+  const handleCreateCategory = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!newCategoryName.trim()) return;
+    const slug = newCategoryName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    if (categories.some((c) => c.id === slug)) {
+      alert('یہ کیٹیگری پہلے سے موجود ہے!');
       return;
     }
-    setCart((prev) =>
-      prev.map((item) =>
-        item.product.id === productId && item.selectedWeight === weight
-          ? { ...item, quantity: newQty }
-          : item
-      )
-    );
+    const created: CategoryItem = {
+      id: slug,
+      name: newCategoryName.trim(),
+      romanUrduTitle: newCategoryUrdu.trim() || newCategoryName.trim(),
+    };
+    setCategories([...categories, created]);
+    setNewProductForm((prev) => ({ ...prev, category: slug }));
+    setNewCategoryName('');
+    setNewCategoryUrdu('');
+    setIsCategoryModalOpen(false);
+    showToast(`نئی کیٹیگری شامل کر دی گئی: ${created.name}`);
   };
 
-  // Remove item
-  const handleRemoveItem = (productId: string, weight: string) => {
-    setCart((prev) =>
-      prev.filter(
-        (item) =>
-          !(item.product.id === productId && item.selectedWeight === weight)
-      )
-    );
-  };
-
-  // Clear entire cart
-  const handleClearCart = () => {
-    setCart([]);
-  };
-
-  // New order logged (from customer WhatsApp checkout) -> sync to Firestore!
-  const handleOrderPlaced = (newOrder: OrderRecord) => {
-    setOrders((prev) => [newOrder, ...prev]);
-    saveOrderToFirestore(newOrder).catch((err) =>
-      console.error('Firestore saveOrder error:', err)
-    );
-  };
-
-  // Admin login success
-  const handleLoginSuccess = (user: AdminUser) => {
-    setCurrentAdmin(user);
-    setViewMode('admin');
-    setToast({
-      visible: true,
-      message: `Welcome back, ${user.name}!`,
-      subMessage: `Logged in as ${user.role}`,
-    });
-    setTimeout(() => setToast((t) => ({ ...t, visible: false })), 3000);
-  };
-
-  // Admin logout
-  const handleAdminLogout = () => {
-    setCurrentAdmin(null);
-    setViewMode('store');
-    setToast({
-      visible: true,
-      message: 'Logged out successfully',
-    });
-    setTimeout(() => setToast((t) => ({ ...t, visible: false })), 2000);
-  };
-
-  // Manual Cross-Device Sync: Fetch latest from Firestore & update localStorage + DOM
-  const handleManualSync = async () => {
-    setIsSyncing(true);
-    try {
-      const [cloudProds, cloudBanner, cloudCats, cloudRawBanner] = await Promise.all([
-        fetchProductsFromFirestore(),
-        fetchBannerFromFirestore(),
-        fetchCategoriesFromFirestore(),
-        fetchRawIngredientsBannerFromFirestore(),
-      ]);
-
-      if (cloudProds && cloudProds.length > 0) {
-        setProducts(cloudProds);
-        try {
-          localStorage.setItem('taste_heven_products', JSON.stringify(cloudProds));
-        } catch (e) {
-          console.warn('localStorage save warning:', e);
-        }
-      }
-
-      if (cloudBanner) {
-        setBannerImage(cloudBanner);
-        try {
-          localStorage.setItem('taste_heven_banner_image', cloudBanner);
-        } catch (e) {
-          console.warn('Banner localStorage warning:', e);
-        }
-      }
-
-      if (cloudCats && cloudCats.length > 0) {
-        setCategories(cloudCats);
-        try {
-          localStorage.setItem('taste_heven_categories', JSON.stringify(cloudCats));
-        } catch (e) {
-          console.warn('Categories localStorage warning:', e);
-        }
-      }
-
-      if (cloudRawBanner) {
-        setRawIngredientsBanner(cloudRawBanner);
-        try {
-          localStorage.setItem('taste_heven_raw_ingredients_banner', cloudRawBanner);
-        } catch (e) {
-          console.warn('Raw ingredients banner localStorage warning:', e);
-        }
-      }
-
-      setForceRefreshKey((k) => k + 1);
-      setToast({
-        visible: true,
-        message: 'Sync Complete Across Devices',
-        subMessage: 'تمام پروڈکٹس، کیٹیگریز اور بینر تصاویر کلاؤڈ اور فون کے ساتھ سنک ہو چکی ہیں۔',
-      });
-      setTimeout(() => setToast((t) => ({ ...t, visible: false })), 3000);
-    } catch (err: any) {
-      console.warn('Manual sync warning:', err);
-    } finally {
-      setIsSyncing(false);
+  // Delete Category Functionality
+  const handleDeleteCategory = (catId: string) => {
+    if (catId === 'all' || catId === 'achar') {
+      alert('بنیادی کیٹیگری حذف نہیں کی جا سکتی!');
+      return;
+    }
+    if (confirm('کیا آپ واقعی یہ کیٹیگری حذف کرنا چاہتے ہیں؟')) {
+      setCategories((prev) => prev.filter((c) => c.id !== catId));
+      if (activeCategory === catId) setActiveCategory('all');
+      showToast('کیٹیگری حذف کر دی گئی');
     }
   };
 
-  // Product updates -> sync to single JSON in localStorage, Firestore, and force DOM refresh!
-  const handleUpdateProduct = (updated: Product) => {
-    setProducts((prev) => {
-      const next = prev.map((p) => (p.id === updated.id ? updated : p));
-      try {
-        localStorage.setItem('taste_heven_products', JSON.stringify(next));
-      } catch (e) {
-        console.warn('localStorage save warning:', e);
-      }
-      return next;
-    });
-
-    setForceRefreshKey((k) => k + 1);
-
-    saveProductToFirestore(updated).catch((err) =>
-      console.error('Firestore updateProduct error:', err)
-    );
-
-    setToast({
-      visible: true,
-      message: 'Product Updated Live',
-      subMessage: `${updated.name} کی نئی تصویر فوری لائیو اپڈیٹ ہو چکی ہے۔`,
-    });
-    setTimeout(() => setToast((t) => ({ ...t, visible: false })), 2500);
-  };
-
-  const handleAddProduct = (newProd: Product) => {
-    setProducts((prev) => {
-      const next = [newProd, ...prev];
-      try {
-        localStorage.setItem('taste_heven_products', JSON.stringify(next));
-      } catch (e) {}
-      return next;
-    });
-    setForceRefreshKey((k) => k + 1);
-    saveProductToFirestore(newProd).catch((err) =>
-      console.error('Firestore addProduct error:', err)
-    );
-    setToast({
-      visible: true,
-      message: 'New Product Added',
-      subMessage: `${newProd.name} saved to Cloud Firestore.`,
-    });
-    setTimeout(() => setToast((t) => ({ ...t, visible: false })), 2500);
-  };
-
-  const handleDeleteProduct = (productId: string) => {
-    setProducts((prev) => {
-      const next = prev.filter((p) => p.id !== productId);
-      try {
-        localStorage.setItem('taste_heven_products', JSON.stringify(next));
-      } catch (e) {}
-      return next;
-    });
-    setForceRefreshKey((k) => k + 1);
-    deleteProductFromFirestore(productId).catch((err) =>
-      console.error('Firestore deleteProduct error:', err)
-    );
-    setToast({
-      visible: true,
-      message: 'Product Removed',
-      subMessage: 'Product removed from Cloud Firestore.',
-    });
-    setTimeout(() => setToast((t) => ({ ...t, visible: false })), 2500);
-  };
-
-  // Order status update -> sync to Firestore!
-  const handleUpdateOrderStatus = (orderId: string, status: OrderStatus) => {
-    setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status } : o))
-    );
-    updateOrderStatusInFirestore(orderId, status).catch((err) =>
-      console.error('Firestore updateOrderStatus error:', err)
-    );
-    setToast({
-      visible: true,
-      message: 'Order Status Updated',
-      subMessage: `Status changed to ${status.toUpperCase()} in Firestore`,
-    });
-    setTimeout(() => setToast((t) => ({ ...t, visible: false })), 2500);
-  };
-
-  // Delete individual order -> sync to Firestore & localStorage
-  const handleDeleteOrder = (orderId: string) => {
-    setOrders((prev) => prev.filter((o) => o.id !== orderId));
-    deleteOrderFromFirestore(orderId).catch((err) =>
-      console.error('Firestore deleteOrder error:', err)
-    );
-    setToast({
-      visible: true,
-      message: 'Order Removed',
-      subMessage: 'آرڈر کامیابی سے ہٹا دیا گیا ہے۔',
-    });
-    setTimeout(() => setToast((t) => ({ ...t, visible: false })), 2500);
-  };
-
-  // Clear all orders & history -> purge Firestore & localStorage
-  const handleClearAllOrders = async () => {
-    setOrders([]);
+  // Reset to original defaults
+  const handleResetDefaults = () => {
+    setProducts(INITIAL_PRODUCTS);
+    setCategories(INITIAL_CATEGORIES);
+    setHeroImage(DEFAULT_MANGO_IMG);
+    setAdminPassword(DEFAULT_ADMIN_PASSWORD);
     try {
-      localStorage.removeItem('taste_heven_orders');
-    } catch (e) {}
-    await clearAllOrdersFromFirestore().catch((err) =>
-      console.error('Firestore clearAllOrders error:', err)
-    );
-    setToast({
-      visible: true,
-      message: 'All Orders Cleared',
-      subMessage: 'تمام آرڈرز اور ہسٹری مکمل طور پر صاف کر دی گئی ہے۔',
-    });
-    setTimeout(() => setToast((t) => ({ ...t, visible: false })), 2500);
+      localStorage.removeItem('taste_heven_achar_products_v5');
+      localStorage.removeItem('taste_heven_categories_v5');
+      localStorage.removeItem('taste_heven_hero_jar_v5');
+      localStorage.removeItem('taste_heven_admin_pwd');
+    } catch {}
+    showToast('تمام تصاویر، پروڈکٹس اور پاسورڈ ری سیٹ کر دیے گئے');
   };
 
-  // Banner image update -> sync to Firestore & localStorage, update state & DOM immediately
-  const handleUpdateBannerImage = async (newBanner: string) => {
-    setBannerImage(newBanner);
-    try {
-      localStorage.setItem('taste_heven_banner_image', newBanner);
-    } catch (e) {
-      console.warn('Banner localStorage warning:', e);
-    }
-    setForceRefreshKey((k) => k + 1);
-
-    await saveBannerImageToFirestore(newBanner).catch((err) =>
-      console.error('Firestore saveBanner error:', err)
-    );
-    setToast({
-      visible: true,
-      message: 'Homepage Banner Updated Live',
-      subMessage: 'ہوم پیج کا مین بینر کامیابی سے محفوظ اور لائیو اپڈیٹ ہو چکا ہے۔',
-    });
-    setTimeout(() => setToast((t) => ({ ...t, visible: false })), 3000);
+  const getWhatsAppOrderUrl = (productName: string) => {
+    const message = `As-salamu Alaikum, mujhe ${productName} order karna hai. TASTE HEAVEN website se. Lahore delivery chahiye.`;
+    return `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(message)}`;
   };
 
-  // Categories update (Banner images & Display Order: Chatpata Achar #1, Lazeez Murabbay #2, Pure Honey #3)
-  const handleUpdateCategories = async (newCategories: CategoryConfig[]) => {
-    setCategories(newCategories);
-    try {
-      localStorage.setItem('taste_heven_categories', JSON.stringify(newCategories));
-    } catch (e) {
-      console.warn('Categories localStorage warning:', e);
-    }
-    setForceRefreshKey((k) => k + 1);
-
-    await saveCategoriesToFirestore(newCategories).catch((err) =>
-      console.error('Firestore saveCategories error:', err)
-    );
-    setToast({
-      visible: true,
-      message: 'Categories & Banners Updated Live',
-      subMessage: 'کیٹیگری کارڈز کا آرڈر اور بینر تصاویر ہوم پیج پر لائیو اپڈیٹ ہو چکی ہیں۔',
-    });
-    setTimeout(() => setToast((t) => ({ ...t, visible: false })), 3000);
-  };
-
-  // Pure Raw Ingredients banner update -> sync to Firestore & localStorage, update state & DOM immediately
-  const handleUpdateRawIngredientsBanner = async (newBanner: string) => {
-    setRawIngredientsBanner(newBanner);
-    try {
-      localStorage.setItem('taste_heven_raw_ingredients_banner', newBanner);
-    } catch (e) {
-      console.warn('Raw ingredients banner localStorage warning:', e);
-    }
-    setForceRefreshKey((k) => k + 1);
-
-    await saveRawIngredientsBannerToFirestore(newBanner).catch((err) =>
-      console.error('Firestore saveRawIngredientsBanner error:', err)
-    );
-    setToast({
-      visible: true,
-      message: 'Raw Ingredients Banner Updated Live',
-      subMessage: 'خالص قدرتی اجزاء والا بینر کامیابی سے محفوظ اور لائیو اپڈیٹ ہو چکا ہے۔',
-    });
-    setTimeout(() => setToast((t) => ({ ...t, visible: false })), 3000);
+  const getGeneralWhatsAppUrl = () => {
+    const message = 'As-salamu Alaikum, mujhe TASTE HEAVEN website se achar order karna hai. Lahore delivery chahiye.';
+    return `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(message)}`;
   };
 
   const scrollToProducts = () => {
     const el = document.getElementById('products');
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
-  const handleReturnToStore = () => {
-    setViewMode('store');
-    setForceRefreshKey((k) => k + 1);
-    setTimeout(() => {
-      scrollToProducts();
-    }, 100);
-  };
+  // Filtered products list based on active category
+  const filteredProducts =
+    activeCategory === 'all'
+      ? products
+      : products.filter((p) => p.category === activeCategory);
 
-  // Render Admin Dashboard if in admin view
-  if (viewMode === 'admin' && currentAdmin) {
+  // ==========================================
+  // VIEW 1: ADMIN PORTAL
+  // ==========================================
+  if (viewMode === 'admin') {
     return (
-      <>
-        <AdminDashboard
-          currentUser={currentAdmin}
-          onLogout={handleAdminLogout}
-          onReturnToStore={handleReturnToStore}
-          products={products}
-          onUpdateProduct={handleUpdateProduct}
-          onAddProduct={handleAddProduct}
-          onDeleteProduct={handleDeleteProduct}
-          orders={orders}
-          onUpdateOrderStatus={handleUpdateOrderStatus}
-          onDeleteOrder={handleDeleteOrder}
-          onClearAllOrders={handleClearAllOrders}
-          adminUsers={adminUsers}
-          onUpdateAdminUsers={setAdminUsers}
-          bannerImage={bannerImage}
-          onUpdateBannerImage={handleUpdateBannerImage}
-          rawIngredientsBanner={rawIngredientsBanner}
-          onUpdateRawIngredientsBanner={handleUpdateRawIngredientsBanner}
-          categories={categories}
-          onUpdateCategories={handleUpdateCategories}
-          onManualSync={handleManualSync}
-          isSyncing={isSyncing}
-        />
-        <Toast
-          message={toast.message}
-          subMessage={toast.subMessage}
-          isVisible={toast.visible}
-          onOpenCart={() => {}}
-        />
-      </>
+      <div className="min-h-screen bg-neutral-50 text-neutral-900 font-['Poppins',sans-serif]">
+        {/* Admin Top Bar */}
+        <header className="sticky top-0 z-40 bg-white border-b border-neutral-200 shadow-xs">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-xl sm:text-2xl font-black text-black tracking-tight">
+                TASTE HEVEN
+              </span>
+              <span className="text-xs bg-black text-white font-semibold px-2.5 py-1 rounded-md">
+                Admin Portal
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={() => setViewMode('store')}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-black hover:bg-neutral-800 text-white text-xs sm:text-sm font-semibold rounded-full shadow-sm transition-all cursor-pointer"
+              >
+                <Store className="w-4 h-4" />
+                <span>دکان پر جائیں (View Store)</span>
+              </button>
+              <button
+                onClick={handleAdminLogout}
+                className="px-3 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-semibold rounded-full transition-colors cursor-pointer"
+                title="Logout"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Admin Content Area */}
+        <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+          {/* Top Info Banner & Actions */}
+          <div className="bg-white rounded-2xl p-6 border border-neutral-200 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-extrabold text-black">
+                ایڈمن پورٹل: پروڈکٹس، کیٹیگریز اور فوٹوز مینیجر
+              </h1>
+              <p className="text-xs sm:text-sm text-neutral-600 mt-1">
+                یہاں سے آپ نئی پروڈکٹ، نئی کیٹیگری، تصویر، قیمت اور پاسورڈ تبدیل کر سکتے ہیں۔
+              </p>
+              {/* Display current admin password prominently */}
+              <div className="mt-2.5 inline-flex items-center gap-2 px-3 py-1 bg-amber-50 border border-amber-200 rounded-lg text-xs font-semibold text-amber-900">
+                <Key className="w-3.5 h-3.5 text-amber-600" />
+                <span>
+                  Admin Password: <strong className="font-mono text-black font-bold">{adminPassword}</strong>
+                </span>
+                <button
+                  onClick={() => setIsChangingPassword(!isChangingPassword)}
+                  className="ml-2 underline text-amber-800 hover:text-black cursor-pointer font-medium"
+                >
+                  پاسورڈ بدلیں (Change)
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              {/* Add Product Button */}
+              <button
+                onClick={() => setIsAddingProduct(!isAddingProduct)}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-black text-white rounded-full text-xs font-semibold hover:bg-neutral-800 transition-colors cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>نیا پروڈکٹ شامل کریں</span>
+              </button>
+              {/* Create Category Button */}
+              <button
+                onClick={() => setIsCategoryModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-neutral-100 text-neutral-800 hover:bg-neutral-200 rounded-full text-xs font-semibold transition-colors cursor-pointer border border-neutral-300"
+              >
+                <FolderPlus className="w-4 h-4 text-amber-600" />
+                <span>نئی کیٹیگری بنائیں</span>
+              </button>
+              {/* Reset to Defaults */}
+              <button
+                onClick={handleResetDefaults}
+                className="inline-flex items-center gap-1.5 px-3 py-2.5 bg-neutral-100 text-neutral-700 hover:bg-neutral-200 rounded-full text-xs font-semibold transition-colors cursor-pointer"
+                title="Reset to default images and products"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>ری سیٹ</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Change Password Form (Accordion) */}
+          {isChangingPassword && (
+            <div className="bg-amber-50 rounded-2xl p-5 border border-amber-200 mb-8 max-w-md">
+              <h3 className="text-xs font-bold text-amber-950 uppercase mb-2">
+                نیا ایڈمن پاسورڈ سیٹ کریں:
+              </h3>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="نیا پاسورڈ لکھیں (e.g. heven123)"
+                  value={newPasswordInput}
+                  onChange={(e) => setNewPasswordInput(e.target.value)}
+                  className="flex-1 px-3 py-2 text-xs bg-white border border-amber-300 rounded-xl focus:outline-none focus:border-black font-mono"
+                />
+                <button
+                  onClick={handleSaveNewPassword}
+                  className="px-4 py-2 bg-black text-white text-xs font-bold rounded-xl hover:bg-neutral-800 cursor-pointer"
+                >
+                  محفوظ کریں
+                </button>
+                <button
+                  onClick={() => setIsChangingPassword(false)}
+                  className="px-3 py-2 text-xs text-neutral-500 hover:text-black cursor-pointer"
+                >
+                  کینسل
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* SECTION 1: CATEGORY MANAGER */}
+          <div className="bg-white rounded-2xl p-6 border border-neutral-200 mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-amber-600" />
+                <h2 className="text-sm font-extrabold text-black uppercase tracking-wider">
+                  کیٹیگریز مینیجر (Categories Management)
+                </h2>
+              </div>
+              <button
+                onClick={() => setIsCategoryModalOpen(true)}
+                className="text-xs text-amber-700 font-bold hover:underline inline-flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>نئی کیٹیگری بنائیں</span>
+              </button>
+            </div>
+
+            {/* Existing Categories Badges */}
+            <div className="flex flex-wrap gap-2.5">
+              {categories.map((cat) => {
+                const count =
+                  cat.id === 'all'
+                    ? products.length
+                    : products.filter((p) => p.category === cat.id).length;
+                return (
+                  <div
+                    key={cat.id}
+                    className="inline-flex items-center gap-2 bg-neutral-100 border border-neutral-200 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-neutral-800"
+                  >
+                    <span>{cat.name}</span>
+                    <span className="text-[10px] text-neutral-500">({cat.romanUrduTitle})</span>
+                    <span className="bg-white px-2 py-0.5 rounded-full text-[10px] text-black font-bold">
+                      {count} items
+                    </span>
+                    {cat.id !== 'all' && cat.id !== 'achar' && (
+                      <button
+                        onClick={() => handleDeleteCategory(cat.id)}
+                        className="text-neutral-400 hover:text-red-600 ml-1"
+                        title="Delete category"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* SECTION 2: ADD NEW PRODUCT FORM */}
+          {isAddingProduct && (
+            <div className="bg-white rounded-2xl p-6 border-2 border-black mb-8 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-bold text-black flex items-center gap-2">
+                  <Plus className="w-4 h-4 text-emerald-600" />
+                  <span>نیا پروڈکٹ شامل کریں (Add New Product)</span>
+                </h2>
+                <button
+                  onClick={() => setIsAddingProduct(false)}
+                  className="p-1 text-neutral-400 hover:text-black"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 mb-1">
+                    Product Name (English) *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Kasuri Methi Achar"
+                    value={newProductForm.name}
+                    onChange={(e) =>
+                      setNewProductForm({ ...newProductForm, name: e.target.value })
+                    }
+                    className="w-full px-3.5 py-2 text-xs border border-neutral-300 rounded-xl focus:outline-none focus:border-black"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 mb-1">
+                    Roman Urdu Subtitle
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Kasuri Methi Aur Sarson Ka Achar"
+                    value={newProductForm.romanUrduTitle}
+                    onChange={(e) =>
+                      setNewProductForm({ ...newProductForm, romanUrduTitle: e.target.value })
+                    }
+                    className="w-full px-3.5 py-2 text-xs border border-neutral-300 rounded-xl focus:outline-none focus:border-black"
+                  />
+                </div>
+
+                {/* Category Selector + Create Category Inline Button */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-neutral-700">Category *</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsCategoryModalOpen(true)}
+                      className="text-[11px] text-amber-700 font-bold hover:underline"
+                    >
+                      + نئی کیٹیگری
+                    </button>
+                  </div>
+                  <select
+                    value={newProductForm.category}
+                    onChange={(e) =>
+                      setNewProductForm({ ...newProductForm, category: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-xs border border-neutral-300 rounded-xl focus:outline-none focus:border-black bg-white"
+                  >
+                    {categories
+                      .filter((c) => c.id !== 'all')
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({c.romanUrduTitle})
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 mb-1">
+                    Price in PKR (Rs) *
+                  </label>
+                  <input
+                    type="number"
+                    value={newProductForm.price}
+                    onChange={(e) =>
+                      setNewProductForm({
+                        ...newProductForm,
+                        price: Number(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full px-3.5 py-2 text-xs border border-neutral-300 rounded-xl focus:outline-none focus:border-black"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 mb-1">
+                    Weight / Jar Size
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="500g Jar"
+                    value={newProductForm.weight}
+                    onChange={(e) =>
+                      setNewProductForm({ ...newProductForm, weight: e.target.value })
+                    }
+                    className="w-full px-3.5 py-2 text-xs border border-neutral-300 rounded-xl focus:outline-none focus:border-black"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 mb-1">
+                    Upload Product Photo *
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        try {
+                          const compressed = await processImageFile(file, 800, 800, 0.82);
+                          setNewProductForm((prev) => ({ ...prev, image: compressed }));
+                        } catch {
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            if (typeof reader.result === 'string') {
+                              setNewProductForm((prev) => ({ ...prev, image: reader.result as string }));
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }
+                    }}
+                    className="w-full text-xs text-neutral-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-black file:text-white hover:file:bg-neutral-800"
+                  />
+                </div>
+
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <label className="block text-xs font-bold text-neutral-700 mb-1">
+                    Product Description (اردو یا انگلش میں)
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Khaalis kachi ghani sarson ke teil mein tayyar shuda..."
+                    value={newProductForm.description}
+                    onChange={(e) =>
+                      setNewProductForm({ ...newProductForm, description: e.target.value })
+                    }
+                    className="w-full px-3.5 py-2 text-xs border border-neutral-300 rounded-xl focus:outline-none focus:border-black"
+                  />
+                </div>
+              </div>
+
+              {/* Photo Preview & Save Button */}
+              <div className="mt-5 pt-4 border-t border-neutral-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-lg bg-neutral-50 border border-neutral-200 p-1 flex items-center justify-center shrink-0">
+                    <img
+                      src={newProductForm.image}
+                      alt="Preview"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <span className="text-xs text-neutral-500">پروڈکٹ فوٹو پریویو (Preview)</span>
+                </div>
+
+                <button
+                  onClick={() => {
+                    if (!newProductForm.name) {
+                      alert('براہ کرم پروڈکٹ کا نام درج کریں');
+                      return;
+                    }
+                    const created: ProductItem = {
+                      id: `prod-${Date.now()}`,
+                      name: newProductForm.name,
+                      romanUrduTitle: newProductForm.romanUrduTitle || newProductForm.name,
+                      category: newProductForm.category || 'achar',
+                      price: newProductForm.price || 650,
+                      weight: newProductForm.weight || '500g Jar',
+                      image: newProductForm.image || DEFAULT_MANGO_IMG,
+                      altText: `${newProductForm.name} Lahore - TASTE HEVEN`,
+                      description: newProductForm.description || 'Ghar jaisa khaalis achar.',
+                    };
+                    setProducts([...products, created]);
+                    setIsAddingProduct(false);
+                    setNewProductForm({
+                      name: '',
+                      romanUrduTitle: '',
+                      category: 'achar',
+                      price: 650,
+                      weight: '500g Jar',
+                      image: DEFAULT_MANGO_IMG,
+                      description: '',
+                    });
+                    showToast('نیا پروڈکٹ کامیابی سے شامل کر دیا گیا!');
+                  }}
+                  className="px-6 py-2.5 bg-black text-white text-xs font-bold rounded-full hover:bg-neutral-800 transition-colors cursor-pointer"
+                >
+                  محفوظ کریں (Save Product)
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* SECTION 3: HERO CENTER JAR PHOTO */}
+          <div className="bg-white rounded-2xl p-6 border border-neutral-200 mb-8">
+            <h2 className="text-sm font-extrabold text-black uppercase tracking-wider mb-4">
+              ہوم پیج ہیرو جار فوٹو (Homepage Hero Center Jar)
+            </h2>
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <div className="w-32 h-32 rounded-xl bg-neutral-50 p-2 border border-neutral-200 flex items-center justify-center shrink-0">
+                <img
+                  src={heroImage}
+                  alt="Hero Jar Preview"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="space-y-2 text-center sm:text-left">
+                <p className="text-xs text-neutral-700 font-semibold">
+                  ہوم پیج پر اوپر سب سے بڑا مین جار دکھانے کے لیے نئی تصویر منتخب کریں:
+                </p>
+                <label className="inline-flex items-center gap-2 px-4 py-2 bg-black hover:bg-neutral-800 text-white text-xs font-semibold rounded-full cursor-pointer transition-colors shadow-sm">
+                  <Upload className="w-3.5 h-3.5 text-amber-400" />
+                  <span>ہیرو جار کی نئی تصویر اپلوڈ کریں</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleHeroFileUpload(f);
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION 4: ALL PRODUCTS LIST & PHOTO MANAGER */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-extrabold text-black uppercase tracking-wider">
+                تمام پروڈکٹس ({products.length} Items) — ہر پروڈکٹ کی تصویر اور قیمت بدلیں
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {products.map((prod) => (
+                <div
+                  key={prod.id}
+                  className="bg-white rounded-2xl p-5 border border-neutral-200 shadow-xs flex flex-col justify-between"
+                >
+                  <div>
+                    {/* Product Photo with Upload Overlay */}
+                    <div className="relative w-full aspect-square bg-neutral-50 rounded-xl overflow-hidden mb-3 border border-neutral-100 flex items-center justify-center p-3 group">
+                      <img
+                        src={prod.image}
+                        alt={prod.altText}
+                        className="w-full h-full object-contain"
+                      />
+
+                      {/* Direct Upload Overlay */}
+                      <label
+                        className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-xs font-bold gap-1 cursor-pointer"
+                        title="Click to replace photo"
+                      >
+                        <Camera className="w-6 h-6 text-white" />
+                        <span>نئی تصویر اپلوڈ کریں</span>
+                        <span className="text-[10px] text-neutral-300">(Click to Upload)</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload(prod.id, file);
+                          }}
+                        />
+                      </label>
+                    </div>
+
+                    {/* Quick Button to Change Picture */}
+                    <label className="w-full mb-3 inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-semibold rounded-xl cursor-pointer transition-colors border border-neutral-200">
+                      <Upload className="w-3.5 h-3.5 text-black" />
+                      <span>تصویر بدلیں (Change Photo)</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleFileUpload(prod.id, file);
+                        }}
+                      />
+                    </label>
+
+                    {/* Editable Fields */}
+                    <div className="space-y-2 text-left">
+                      <div>
+                        <label className="block text-[11px] font-bold text-neutral-500">
+                          Product Name
+                        </label>
+                        <input
+                          type="text"
+                          value={prod.name}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setProducts((prev) =>
+                              prev.map((p) => (p.id === prod.id ? { ...p, name: val } : p))
+                            );
+                          }}
+                          className="w-full px-2.5 py-1.5 text-xs font-bold text-black border border-neutral-200 rounded-lg focus:outline-none focus:border-black"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[11px] font-bold text-neutral-500">
+                            Category
+                          </label>
+                          <select
+                            value={prod.category}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setProducts((prev) =>
+                                prev.map((p) => (p.id === prod.id ? { ...p, category: val } : p))
+                              );
+                            }}
+                            className="w-full px-2.5 py-1.5 text-xs font-semibold text-black border border-neutral-200 rounded-lg focus:outline-none focus:border-black bg-white"
+                          >
+                            {categories
+                              .filter((c) => c.id !== 'all')
+                              .map((c) => (
+                                <option key={c.id} value={c.id}>
+                                  {c.name}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-neutral-500">
+                            Price (Rs)
+                          </label>
+                          <input
+                            type="number"
+                            value={prod.price}
+                            onChange={(e) => {
+                              const val = Number(e.target.value) || 0;
+                              setProducts((prev) =>
+                                prev.map((p) => (p.id === prod.id ? { ...p, price: val } : p))
+                              );
+                            }}
+                            className="w-full px-2.5 py-1.5 text-xs font-bold text-black border border-neutral-200 rounded-lg focus:outline-none focus:border-black"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-neutral-500">
+                          Description
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={prod.description}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setProducts((prev) =>
+                              prev.map((p) => (p.id === prod.id ? { ...p, description: val } : p))
+                            );
+                          }}
+                          className="w-full px-2.5 py-1.5 text-xs text-neutral-700 border border-neutral-200 rounded-lg focus:outline-none focus:border-black"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between">
+                    <span className="text-[11px] text-emerald-700 font-semibold">
+                      ✓ آٹو محفوظ (Auto-Saved)
+                    </span>
+                    {products.length > 1 && (
+                      <button
+                        onClick={() => {
+                          if (confirm(`${prod.name} کو واقعی حذف کرنا چاہتے ہیں؟`)) {
+                            setProducts((prev) => prev.filter((p) => p.id !== prod.id));
+                            showToast('پروڈکٹ ہٹا دیا گیا');
+                          }
+                        }}
+                        className="text-red-500 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                        title="Delete product"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </main>
+
+        {/* Modal: Add New Category */}
+        {isCategoryModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-neutral-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-extrabold text-black flex items-center gap-2">
+                  <FolderPlus className="w-5 h-5 text-amber-600" />
+                  <span>نئی کیٹیگری بنائیں (Create New Category)</span>
+                </h3>
+                <button
+                  onClick={() => setIsCategoryModalOpen(false)}
+                  className="p-1 text-neutral-400 hover:text-black"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateCategory} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 mb-1">
+                    Category Name in English *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Chutney, Sirka, Dry Fruits"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    autoFocus
+                    required
+                    className="w-full px-3.5 py-2 text-xs border border-neutral-300 rounded-xl focus:outline-none focus:border-black font-semibold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 mb-1">
+                    Roman Urdu / Urdu Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Chatpati Chutniyan (روایتی چٹنیاں)"
+                    value={newCategoryUrdu}
+                    onChange={(e) => setNewCategoryUrdu(e.target.value)}
+                    className="w-full px-3.5 py-2 text-xs border border-neutral-300 rounded-xl focus:outline-none focus:border-black"
+                  />
+                </div>
+
+                <div className="pt-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsCategoryModalOpen(false)}
+                    className="px-4 py-2 text-xs font-semibold text-neutral-600 hover:text-black cursor-pointer"
+                  >
+                    کینسل
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-full shadow-sm cursor-pointer"
+                  >
+                    کیٹیگری شامل کریں (Add)
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
     );
   }
 
-
-  // Render Customer Storefront
+  // ==========================================
+  // VIEW 2: CUSTOMER STOREFRONT (CLEAN & MODERN)
+  // ==========================================
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF9F6] text-stone-800">
-      {/* Admin Floating Shortcut Strip if logged in */}
-      {currentAdmin && (
-        <div className="bg-emerald-950 text-amber-200 text-xs py-2 px-4 border-b border-emerald-800 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Shield className="w-3.5 h-3.5 text-amber-400" />
-            <span>
-              Logged in as <strong className="text-white">{currentAdmin.name}</strong> ({currentAdmin.role})
-            </span>
+    <div className="min-h-screen bg-white text-neutral-900 font-['Poppins',sans-serif] selection:bg-amber-500 selection:text-white flex flex-col justify-between">
+      {/* 
+        NO BANNER RULE STRICTLY ENFORCED:
+        - No top promo banner
+        - No announcement bar
+        - No discount strip
+        - Start directly with header
+      */}
+
+      {/* 1. HEADER ONLY - LOGO COMPLETELY CENTERED */}
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-neutral-100">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-20 grid grid-cols-3 items-center">
+          {/* Left: Password-Protected Admin Portal Link */}
+          <div className="flex items-center justify-start">
+            <button
+              onClick={() => {
+                if (isAdminLoggedIn) {
+                  setViewMode('admin');
+                } else {
+                  setIsPasswordModalOpen(true);
+                }
+              }}
+              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-semibold rounded-full transition-colors cursor-pointer border border-neutral-200 whitespace-nowrap"
+              title="Admin Portal (پاسورڈ: heven123)"
+            >
+              <Lock className="w-3 h-3 text-neutral-500" />
+              <span>Admin Portal</span>
+            </button>
           </div>
-          <button
-            onClick={() => setViewMode('admin')}
-            className="flex items-center gap-1 px-3 py-1 bg-amber-500 hover:bg-amber-400 text-emerald-950 font-bold rounded-md transition-colors cursor-pointer text-xs"
-          >
-            <span>Open Admin Dashboard</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+
+          {/* Center: Logo Name "TASTE HEVEN" in SOLID BLACK, completely centered */}
+          <div className="flex items-center justify-center text-center">
+            <a
+              href="#"
+              className="text-xl sm:text-2xl md:text-3xl font-black text-black tracking-tight select-none whitespace-nowrap"
+            >
+              TASTE HEVEN
+            </a>
+          </div>
+
+          {/* Right: Black "Shop Now" button */}
+          <div className="flex items-center justify-end">
+            <button
+              onClick={scrollToProducts}
+              className="px-4 sm:px-6 py-2 sm:py-2.5 bg-black hover:bg-neutral-800 text-white text-xs sm:text-sm font-semibold rounded-full shadow-sm hover:shadow transition-all duration-200 cursor-pointer whitespace-nowrap"
+            >
+              Shop Now
+            </button>
+          </div>
         </div>
-      )}
+      </header>
 
-      {/* 1. Header with logo, nav links, cart badge, and admin button */}
-      <Header
-        cartCount={cartCount}
-        onOpenCart={() => setIsCartOpen(true)}
-        onOpenAdmin={() => {
-          if (currentAdmin) {
-            setViewMode('admin');
-          } else {
-            setIsAdminLoginOpen(true);
-          }
-        }}
-        activeCategory={activeCategory}
-        onSelectCategory={setActiveCategory}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-      />
-
-      {/* Main Content Area */}
+      {/* MAIN CONTENT CONTAINER */}
       <main className="flex-1">
-        {/* 2. Taste Heaven Hero Banner */}
-        <Hero
-          key={`hero-banner-${forceRefreshKey}-${bannerImage ? bannerImage.slice(-15) : 'default'}`}
-          onExploreClick={scrollToProducts}
-          bannerImage={bannerImage}
-        />
+        {/* 2. HERO SECTION - NO BANNER, ONLY PRODUCT */}
+        <section className="pt-10 pb-16 px-4 sm:px-6 max-w-4xl mx-auto text-center">
+          {/* Center Heading H1 */}
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-black tracking-tight leading-tight">
+            Ghar Jaisa Khaalis Achar - Lahore
+          </h1>
 
-        {/* 3. Core Pantry Categories: Chatpata Achar (#1), Lazeez Murabbay (#2), Pure Honey (#3) */}
-        <Categories
-          key={`home-categories-${forceRefreshKey}-${categories.map((c) => `${c.id}:${c.displayOrder}`).join('-')}`}
-          activeCategory={activeCategory}
-          onSelectCategory={setActiveCategory}
-          counts={categoryCounts}
-          categories={categories}
-        />
+          {/* Subtext */}
+          <p className="mt-3 text-sm sm:text-base text-neutral-600 font-medium">
+            No Preservatives <span className="text-amber-500 font-bold mx-1">|</span> Pure Oil{' '}
+            <span className="text-amber-500 font-bold mx-1">|</span> Homestyle
+          </p>
 
-        {/* 4. Featured Products Section */}
-        <section id="products" className="py-16 bg-white border-b border-[#0A0A0A]/10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Section Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10 pb-6 border-b border-stone-100">
-              <div className="text-left">
-                <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#0A0A0A] bg-stone-50 border border-[#D4AF37]/40 px-3.5 py-1 rounded-full mb-2 shadow-2xs">
-                  <Sparkles className="w-3 h-3 text-[#D4AF37]" />
-                  <span>
-                    {activeCategory === 'all'
-                      ? 'Our Complete Pantry'
-                      : activeCategory === 'honey'
-                      ? '100% Pure Honey (خالص شہد)'
-                      : activeCategory === 'achar'
-                      ? 'Chatpata Desi Achar (اچار)'
-                      : 'Lazeez Murabbay (مربہ)'}
-                  </span>
-                </div>
-                <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#0A0A0A] tracking-tight">
-                  Featured Products & Handcrafted Jars
-                </h2>
-                <p className="text-xs sm:text-sm text-stone-500 mt-1 font-medium">
-                  Selected weight options in Pakistani Rupees (PKR) with instant Add to Cart and WhatsApp Order.
-                </p>
-              </div>
+          {/* Big Center Image of Mango Achar Jar (320x320 on pure white background, rounded) */}
+          <div className="mt-8 flex justify-center">
+            <div className="relative group w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] bg-white rounded-2xl p-2 border border-neutral-100 shadow-lg hover:shadow-xl transition-shadow duration-300 flex items-center justify-center">
+              <img
+                src={heroImage}
+                alt="Mango Achar Lahore - TASTE HEVEN"
+                width={320}
+                height={320}
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = DEFAULT_MANGO_IMG;
+                }}
+                className="w-full h-full object-contain rounded-xl"
+              />
 
-              {/* Active Filter Indicators / Clear Search */}
-              {(searchQuery || activeCategory !== 'all') && (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      setActiveCategory('all');
-                      setSearchQuery('');
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-[#0A0A0A] hover:text-[#D4AF37] bg-stone-100 hover:bg-stone-200 border border-[#D4AF37]/30 rounded-full transition-colors cursor-pointer"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Reset Filters</span>
-                  </button>
-                </div>
-              )}
+              {/* Direct "Change Photo" button on the Hero Jar */}
+              <label
+                className="absolute bottom-3 right-3 bg-black/85 hover:bg-black text-white px-3 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-1.5 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-md"
+                title="Change Hero Jar Image"
+              >
+                <Camera className="w-3.5 h-3.5 text-amber-400" />
+                <span>تصویر بدلیں</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleHeroFileUpload(f);
+                  }}
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* Primary Action Button under Hero Jar */}
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a
+              href={getWhatsAppOrderUrl('Mango Achar (Rs 650)')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-black hover:bg-neutral-800 text-white font-semibold text-sm rounded-full shadow-md hover:shadow-lg transition-all"
+            >
+              <MessageCircle className="w-4 h-4 text-emerald-400" />
+              <span>Order on WhatsApp (Rs 650)</span>
+            </a>
+            <button
+              onClick={scrollToProducts}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-6 py-3.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-semibold text-sm rounded-full transition-all cursor-pointer"
+            >
+              <span>View All Flavours</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </section>
+
+        {/* 3. PRODUCTS SECTION - "Our Best Sellers in Lahore" WITH DYNAMIC CATEGORIES */}
+        <section id="products" className="py-16 px-4 sm:px-6 bg-white border-t border-neutral-100">
+          <div className="max-w-6xl mx-auto">
+            {/* Center Section Heading H2 */}
+            <div className="text-center max-w-2xl mx-auto mb-8">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-black tracking-tight">
+                Our Best Sellers in Lahore
+              </h2>
+              <p className="mt-2 text-xs sm:text-sm text-neutral-600 font-medium">
+                Ghar ka bana zaiqedaar achar, bina kisi chemical ya sirkay ke. Order karein aur kal apne dastarkhwan par paaein!
+              </p>
             </div>
 
-            {/* Products Grid */}
+            {/* Dynamic Category Filter Pills */}
+            <div className="flex items-center justify-center flex-wrap gap-2 mb-10">
+              {categories.map((cat) => {
+                const isActive = activeCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setActiveCategory(cat.id)}
+                    className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                      isActive
+                        ? 'bg-black text-white shadow-sm'
+                        : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700'
+                    }`}
+                  >
+                    <span>{cat.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Products Grid: 2 columns on mobile, 3 on desktop */}
             {filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                {filteredProducts.map((product, index) => (
-                  <ProductCard
-                    key={`${product.id}-${forceRefreshKey}-${product.image ? product.image.slice(-15) : 'default'}`}
-                    product={product}
-                    index={index}
-                    onAddToCart={(prod, weight, price) =>
-                      handleAddToCart(prod, weight, price, 1)
-                    }
-                    onQuickView={handleOpenProduct}
-                  />
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+                {filteredProducts.map((prod) => (
+                  <div
+                    key={prod.id}
+                    className="bg-white border border-neutral-200 rounded-2xl p-4 sm:p-6 text-center flex flex-col justify-between hover:shadow-md hover:border-neutral-300 transition-all duration-200 group"
+                  >
+                    <div>
+                      {/* Square Product Image with Change Photo button */}
+                      <div className="relative w-full aspect-square bg-neutral-50 rounded-xl overflow-hidden mb-4 flex items-center justify-center p-2 border border-neutral-100">
+                        <img
+                          src={prod.image}
+                          alt={prod.altText}
+                          width={280}
+                          height={280}
+                          loading="eager"
+                          decoding="async"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = DEFAULT_MANGO_IMG;
+                          }}
+                          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                        />
+
+                        {/* Photo Change Button directly on card */}
+                        <label
+                          className="absolute bottom-2 right-2 bg-black/80 hover:bg-black text-white p-2 sm:px-2.5 sm:py-1 rounded-full text-[10px] font-semibold flex items-center gap-1 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-sm"
+                          title="Upload new photo for this product"
+                        >
+                          <Camera className="w-3.5 h-3.5 text-amber-400" />
+                          <span className="hidden sm:inline">تصویر بدلیں</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleFileUpload(prod.id, file);
+                            }}
+                          />
+                        </label>
+                      </div>
+
+                      {/* Product Name H3 */}
+                      <h3 className="text-base sm:text-lg font-bold text-black tracking-tight">
+                        {prod.name}
+                      </h3>
+                      <p className="text-xs text-neutral-500 font-medium mt-0.5">
+                        {prod.romanUrduTitle}
+                      </p>
+
+                      {/* Weight & Price */}
+                      <div className="mt-2 flex items-center justify-center gap-2">
+                        <span className="text-lg sm:text-xl font-extrabold text-black">
+                          Rs {prod.price}
+                        </span>
+                        <span className="text-xs text-neutral-500 font-medium bg-neutral-100 px-2 py-0.5 rounded-full">
+                          {prod.weight}
+                        </span>
+                      </div>
+
+                      {/* Friendly Roman Urdu Description */}
+                      <p className="mt-2.5 text-xs text-neutral-600 leading-relaxed font-normal line-clamp-3 sm:line-clamp-none">
+                        {prod.description}
+                      </p>
+                    </div>
+
+                    {/* Black "Order on WhatsApp" Button */}
+                    <div className="mt-5 pt-3 border-t border-neutral-100">
+                      <a
+                        href={getWhatsAppOrderUrl(`${prod.name} (${prod.weight} - Rs ${prod.price})`)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-black hover:bg-neutral-800 text-white text-xs sm:text-sm font-semibold rounded-full shadow-sm hover:shadow transition-all"
+                      >
+                        <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span className="whitespace-nowrap">Order on WhatsApp</span>
+                      </a>
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (
-              <div className="py-16 text-center bg-stone-50 rounded-3xl border border-[#0A0A0A]/10 p-8">
-                <Search className="w-10 h-10 text-stone-400 mx-auto mb-3" />
-                <h3 className="font-serif text-xl font-bold text-[#0A0A0A] mb-1">
-                  No matching pantry items found
-                </h3>
-                <p className="text-xs text-stone-500 max-w-sm mx-auto mb-4">
-                  We couldn't find any products matching "{searchQuery}". Try searching for "Sidr", "Mango", or "Murabba".
+              <div className="py-12 text-center bg-neutral-50 rounded-2xl border border-neutral-200">
+                <p className="text-sm text-neutral-600 font-semibold">
+                  اس کیٹیگری میں فی الحال کوئی پروڈکٹ موجود نہیں۔
                 </p>
                 <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setActiveCategory('all');
-                  }}
-                  className="px-5 py-2.5 bg-[#0A0A0A] text-[#D4AF37] border border-[#D4AF37]/50 text-xs font-bold rounded-full hover:bg-[#1A1A1A] transition-colors cursor-pointer"
+                  onClick={() => setActiveCategory('all')}
+                  className="mt-3 px-4 py-2 bg-black text-white text-xs font-bold rounded-full"
                 >
-                  View All Products
+                  تمام پروڈکٹس دیکھیں (View All)
                 </button>
               </div>
             )}
           </div>
         </section>
 
-        {/* 5. Why Choose Us (Pure Raw Ingredients Craftsmanship Section) */}
-        <WhyChooseUs
-          key={`why-choose-us-${forceRefreshKey}-${rawIngredientsBanner ? rawIngredientsBanner.slice(-15) : 'default'}`}
-          bannerImage={rawIngredientsBanner}
-        />
+        {/* 5. TRUST BADGES */}
+        <section className="py-14 px-4 sm:px-6 bg-neutral-50 border-t border-neutral-100">
+          <div className="max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 text-center">
+              {/* Badge 1: 100% Halal */}
+              <div className="bg-white rounded-2xl p-6 border border-neutral-200/80 shadow-xs flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
+                  <Check className="w-6 h-6 stroke-[2.5]" />
+                </div>
+                <h4 className="text-sm sm:text-base font-bold text-black">100% Halal</h4>
+                <p className="text-xs text-neutral-500 mt-1">
+                  Khaalis pak-o-saaf tareeqay se tayyar shuda
+                </p>
+              </div>
 
-        {/* 6. Reviews */}
-        <Reviews />
+              {/* Badge 2: Lahore Me Cash on Delivery */}
+              <div className="bg-white rounded-2xl p-6 border border-neutral-200/80 shadow-xs flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
+                  <Truck className="w-6 h-6 stroke-[2.5]" />
+                </div>
+                <h4 className="text-sm sm:text-base font-bold text-black">
+                  Lahore Me Cash on Delivery
+                </h4>
+                <p className="text-xs text-neutral-500 mt-1">
+                  Ghar par achar check karein aur payment dein
+                </p>
+              </div>
+
+              {/* Badge 3: 100% Natural */}
+              <div className="bg-white rounded-2xl p-6 border border-neutral-200/80 shadow-xs flex flex-col items-center">
+                <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
+                  <Sparkles className="w-6 h-6 stroke-[2.5]" />
+                </div>
+                <h4 className="text-sm sm:text-base font-bold text-black">100% Natural</h4>
+                <p className="text-xs text-neutral-500 mt-1">
+                  Bina chemical, bina artificial rang ya sirka
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
-      {/* 7. Footer with WhatsApp Order Button & Admin Link */}
-      <Footer
-        onSelectCategory={setActiveCategory}
-        onOpenAdmin={() => {
-          if (currentAdmin) {
-            setViewMode('admin');
-          } else {
-            setIsAdminLoginOpen(true);
-          }
-        }}
-      />
+      {/* QUIET BRAND FOOTER */}
+      <footer className="py-8 px-4 border-t border-neutral-100 text-center text-xs text-neutral-500 bg-white">
+        <p className="font-bold text-black tracking-wide text-sm">
+          TASTE HEVEN · Ghar Jaisa Khaalis Achar - Lahore
+        </p>
+        <p className="mt-1">
+          Same Day & Next Day Delivery across all areas of Lahore · WhatsApp: 0324-8314001
+        </p>
+        <div className="mt-3 flex items-center justify-center gap-4 text-xs">
+          <button
+            onClick={() => {
+              if (isAdminLoggedIn) {
+                setViewMode('admin');
+              } else {
+                setIsPasswordModalOpen(true);
+              }
+            }}
+            className="text-neutral-700 hover:text-black font-semibold underline underline-offset-4 cursor-pointer"
+          >
+            Admin Portal (پاسورڈ: {adminPassword})
+          </button>
+        </div>
+        <p className="mt-2 text-[11px] text-neutral-400">
+          © {new Date().getFullYear()} TASTE HEVEN. All Rights Reserved.
+        </p>
+      </footer>
 
-      {/* Slide-out Cart Drawer */}
-      <CartDrawer
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        items={cart}
-        onUpdateQuantity={handleUpdateQuantity}
-        onRemoveItem={handleRemoveItem}
-        onClearCart={handleClearCart}
-        onOrderPlaced={handleOrderPlaced}
-      />
+      {/* 6. WHATSAPP FUNCTIONALITY: Floating Green WhatsApp Button at Bottom Right */}
+      <a
+        href={getGeneralWhatsAppUrl()}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Order on WhatsApp"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white px-4 py-3 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group"
+      >
+        <MessageCircle className="w-6 h-6 fill-white text-[#25D366]" />
+        <span className="text-xs sm:text-sm font-bold tracking-wide pr-1">
+          Order on WhatsApp
+        </span>
+      </a>
 
-      {/* Product Quick View Modal */}
-      <ProductModal
-        product={selectedProduct}
-        onClose={handleCloseProduct}
-        onAddToCart={handleAddToCart}
-      />
+      {/* MODAL: ADMIN PASSWORD LOGIN */}
+      {isPasswordModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-neutral-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center">
+                  <Lock className="w-4 h-4" />
+                </div>
+                <h3 className="text-base font-extrabold text-black">
+                  Admin Portal Login
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setIsPasswordModalOpen(false);
+                  setPasswordError('');
+                }}
+                className="p-1 text-neutral-400 hover:text-black"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-      {/* Floating WhatsApp Quick Action Widget */}
-      <WhatsAppFloatingButton />
+            {/* Clear password display box */}
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900">
+              <p className="font-bold text-black flex items-center gap-1.5">
+                <Key className="w-3.5 h-3.5 text-amber-600" />
+                <span>Admin Password:</span>
+                <span className="font-mono bg-white px-2 py-0.5 rounded border border-amber-300 font-bold text-sm text-black">
+                  {adminPassword}
+                </span>
+              </p>
+              <p className="text-[11px] text-neutral-600 mt-1">
+                آپ نیچے پاسورڈ درج کر سکتے ہیں یا ڈائریکٹ 1-کلک لاگ اِن بٹن دبا سکتے ہیں۔
+              </p>
+            </div>
 
-      {/* Admin Login Modal */}
-      <AdminLoginModal
-        isOpen={isAdminLoginOpen}
-        onClose={() => setIsAdminLoginOpen(false)}
-        onLoginSuccess={handleLoginSuccess}
-        adminUsers={adminUsers}
-      />
+            <form onSubmit={handleAdminLoginSubmit} className="space-y-3">
+              <div>
+                <input
+                  type="password"
+                  placeholder="پاسورڈ درج کریں (heven123)"
+                  value={enteredPassword}
+                  onChange={(e) => setEnteredPassword(e.target.value)}
+                  autoFocus
+                  className="w-full px-4 py-2.5 text-sm border border-neutral-300 rounded-xl focus:outline-none focus:border-black font-mono text-center tracking-wider"
+                />
+              </div>
 
-      {/* Toast Notification */}
-      <Toast
-        message={toast.message}
-        subMessage={toast.subMessage}
-        isVisible={toast.visible}
-        onOpenCart={() => {
-          setToast((t) => ({ ...t, visible: false }));
-          setIsCartOpen(true);
-        }}
-      />
+              {passwordError && (
+                <p className="text-xs text-red-600 font-semibold text-center">
+                  {passwordError}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                className="w-full py-2.5 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl transition-all cursor-pointer"
+              >
+                لاگ اِن کریں (Login)
+              </button>
+
+              {/* Instant 1-Click Owner Login Option */}
+              <button
+                type="button"
+                onClick={handleQuickOwnerLogin}
+                className="w-full py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+              >
+                1-کلک ڈائریکٹ لاگ اِن (Quick Owner Access)
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Feedback Toast */}
+      {toastMessage && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-black text-white px-5 py-2.5 rounded-full text-xs font-semibold shadow-xl border border-neutral-700 animate-fade-in flex items-center gap-2">
+          <Check className="w-4 h-4 text-emerald-400" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 }

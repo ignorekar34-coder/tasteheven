@@ -1,0 +1,545 @@
+{%- comment -%}
+  Taste Heven - Modern Minimal Luxury Header
+  File: sections/header.liquid
+  OS 2.0 Production Ready
+{%- endcomment -%}
+
+{%- style -%}
+  :root {
+    --th-gold: {{ section.settings.accent_gold | default: '#C5A880' }};
+    --th-black: {{ section.settings.header_bg | default: '#000000' }};
+    --th-white: #ffffff;
+  }
+
+  .th-header-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    width: 100%;
+    background-color: var(--th-black);
+    color: var(--th-white);
+    border-bottom: 1px solid rgba(197, 168, 128, 0.25);
+    font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  .th-announcement-bar {
+    background: #0a0a0a;
+    color: var(--th-gold);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    text-align: center;
+    padding: 7px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .th-header-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .th-brand-logo-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: var(--th-white);
+  }
+
+  .th-brand-logo-img {
+    height: {{ section.settings.logo_height | default: 46 }}px;
+    width: auto;
+    max-width: 180px;
+    object-fit: contain;
+    border-radius: 50%;
+    border: 1px solid var(--th-gold);
+  }
+
+  .th-brand-title {
+    font-family: 'Cinzel', 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: #ffffff;
+    text-transform: uppercase;
+    line-height: 1.1;
+  }
+
+  .th-brand-tagline {
+    font-size: 9px;
+    color: var(--th-gold);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    display: block;
+    margin-top: 2px;
+  }
+
+  /* Desktop Nav */
+  .th-desktop-nav {
+    display: none;
+    align-items: center;
+    gap: 28px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  @media (min-width: 992px) {
+    .th-desktop-nav {
+      display: flex;
+    }
+  }
+
+  .th-nav-item a {
+    color: #e0e0e0;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    transition: color 0.2s ease;
+    position: relative;
+    padding: 6px 0;
+  }
+
+  .th-nav-item a:hover,
+  .th-nav-item a.active {
+    color: var(--th-gold);
+  }
+
+  .th-nav-item a::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0%;
+    height: 2px;
+    background: var(--th-gold);
+    transition: width 0.25s ease;
+  }
+
+  .th-nav-item a:hover::after {
+    width: 100%;
+  }
+
+  /* Action Buttons */
+  .th-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .th-header-btn {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+  }
+
+  .th-header-btn:hover {
+    color: var(--th-gold);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .th-whatsapp-pill {
+    display: none;
+    align-items: center;
+    gap: 7px;
+    background: rgba(197, 168, 128, 0.12);
+    border: 1px solid var(--th-gold);
+    color: var(--th-gold);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    letter-spacing: 0.02em;
+  }
+
+  @media (min-width: 768px) {
+    .th-whatsapp-pill {
+      display: inline-flex;
+    }
+  }
+
+  .th-whatsapp-pill:hover {
+    background: var(--th-gold);
+    color: #000000;
+  }
+
+  .th-cart-badge-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .th-cart-count {
+    position: absolute;
+    top: -5px;
+    right: -8px;
+    background: var(--th-gold);
+    color: #000000;
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    line-height: 1;
+  }
+
+  .th-mobile-toggle {
+    display: inline-flex;
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    cursor: pointer;
+    padding: 6px;
+  }
+
+  @media (min-width: 992px) {
+    .th-mobile-toggle {
+      display: none;
+    }
+  }
+
+  /* Drawer Menu for Mobile */
+  .th-mobile-drawer {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 82%;
+    max-width: 320px;
+    height: 100vh;
+    background: #000000;
+    border-right: 1px solid rgba(197, 168, 128, 0.3);
+    z-index: 9999;
+    transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+  }
+
+  .th-mobile-drawer.is-open {
+    left: 0;
+  }
+
+  .th-drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(2px);
+    z-index: 9998;
+    display: none;
+  }
+
+  .th-drawer-overlay.is-open {
+    display: block;
+  }
+
+  .th-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .th-drawer-nav {
+    list-style: none;
+    padding: 20px 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .th-drawer-nav a {
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 500;
+    display: block;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .th-drawer-nav a:hover {
+    color: var(--th-gold);
+  }
+{%- endstyle -%}
+
+<header class="th-header-wrapper" role="banner">
+  {%- if section.settings.show_announcement and section.settings.announcement_text != blank -%}
+    <div class="th-announcement-bar">
+      {{ section.settings.announcement_text }}
+    </div>
+  {%- endif -%}
+
+  <div class="th-header-inner">
+    <!-- Mobile Hamburger Toggle -->
+    <button
+      type="button"
+      class="th-mobile-toggle"
+      id="thMobileToggle"
+      aria-label="Open mobile navigation menu"
+    >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+
+    <!-- Brand Identity -->
+    <a href="{{ routes.root_url }}" class="th-brand-logo-link">
+      {%- if section.settings.logo != blank -%}
+        <img
+          src="{{ section.settings.logo | image_url: width: 240 }}"
+          alt="{{ section.settings.logo.alt | default: shop.name }}"
+          class="th-brand-logo-img"
+          loading="eager"
+          width="48"
+          height="48"
+        >
+      {%- endif -%}
+      <div>
+        <span class="th-brand-title">{{ section.settings.brand_title | default: 'TASTE HEVEN' }}</span>
+        <span class="th-brand-tagline">{{ section.settings.brand_subtitle | default: 'PURE PANTRY DELICACIES' }}</span>
+      </div>
+    </a>
+
+    <!-- Desktop Navigation Links -->
+    <nav aria-label="Main Navigation">
+      <ul class="th-desktop-nav">
+        {%- assign nav_menu = section.settings.menu | default: 'main-menu' -%}
+        {%- for link in linklists[nav_menu].links -%}
+          <li class="th-nav-item">
+            <a href="{{ link.url }}" class="{% if link.current %}active{% endif %}">
+              {{ link.title }}
+            </a>
+          </li>
+        {%- else -%}
+          <li class="th-nav-item"><a href="/" class="active">Home</a></li>
+          <li class="th-nav-item"><a href="/collections/all">Shop</a></li>
+          <li class="th-nav-item"><a href="/collections/pure-honey">Pure Honey</a></li>
+          <li class="th-nav-item"><a href="/collections/desi-achar">Desi Achar</a></li>
+          <li class="th-nav-item"><a href="/collections/murabba">Murabbay</a></li>
+          <li class="th-nav-item"><a href="/pages/contact">Contact</a></li>
+        {%- endfor -%}
+      </ul>
+    </nav>
+
+    <!-- Right Cluster Actions -->
+    <div class="th-header-actions">
+      {%- if section.settings.whatsapp_phone != blank -%}
+        <a
+          href="https://wa.me/{{ section.settings.whatsapp_phone | remove: ' ' | remove: '+' | remove: '-' }}?text={{ 'Assalam-o-Alaikum Taste Heven! I would like to order fresh honey and achar.' | url_encode }}"
+          target="_blank"
+          rel="noopener"
+          class="th-whatsapp-pill"
+          aria-label="Direct WhatsApp Order"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.414-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+          </svg>
+          <span>WhatsApp Order</span>
+        </a>
+      {%- endif -%}
+
+      <!-- Search Icon -->
+      <a href="{{ routes.search_url }}" class="th-header-btn" aria-label="Search Catalog">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </a>
+
+      <!-- Cart Icon -->
+      <a href="{{ routes.cart_url }}" class="th-header-btn th-cart-badge-wrap" aria-label="View Shopping Cart">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <path d="M16 10a4 4 0 0 1-8 0"></path>
+        </svg>
+        <span class="th-cart-count" id="thCartCount">{{ cart.item_count }}</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- Mobile Drawer Backdrop & Menu -->
+<div class="th-drawer-overlay" id="thDrawerOverlay"></div>
+<aside class="th-mobile-drawer" id="thMobileDrawer" aria-label="Mobile Navigation">
+  <div>
+    <div class="th-drawer-header">
+      <span class="th-brand-title" style="font-size: 16px;">TASTE HEVEN</span>
+      <button type="button" id="thDrawerClose" class="th-header-btn" aria-label="Close menu">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <ul class="th-drawer-nav">
+      {%- assign nav_menu = section.settings.menu | default: 'main-menu' -%}
+      {%- for link in linklists[nav_menu].links -%}
+        <li>
+          <a href="{{ link.url }}">{{ link.title }}</a>
+        </li>
+      {%- else -%}
+        <li><a href="/">Home</a></li>
+        <li><a href="/collections/all">Shop All</a></li>
+        <li><a href="/collections/pure-honey">Pure Honey (خالص شہد)</a></li>
+        <li><a href="/collections/desi-achar">Chatpata Achar (اچار)</a></li>
+        <li><a href="/collections/murabba">Lazeez Murabbay (مربہ)</a></li>
+        <li><a href="/pages/contact">Contact Us</a></li>
+      {%- endfor -%}
+    </ul>
+  </div>
+
+  <div>
+    {%- if section.settings.whatsapp_phone != blank -%}
+      <a
+        href="https://wa.me/{{ section.settings.whatsapp_phone | remove: ' ' | remove: '+' | remove: '-' }}"
+        target="_blank"
+        rel="noopener"
+        class="th-whatsapp-pill"
+        style="display: flex; justify-content: center; width: 100%; padding: 12px;"
+      >
+        <span>Chat & Order on WhatsApp</span>
+      </a>
+    {%- endif -%}
+  </div>
+</aside>
+
+<script>
+  (function() {
+    var toggleBtn = document.getElementById('thMobileToggle');
+    var closeBtn = document.getElementById('thDrawerClose');
+    var drawer = document.getElementById('thMobileDrawer');
+    var overlay = document.getElementById('thDrawerOverlay');
+
+    function openDrawer() {
+      drawer.classList.add('is-open');
+      overlay.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeDrawer() {
+      drawer.classList.remove('is-open');
+      overlay.classList.remove('is-open');
+      document.body.style.overflow = '';
+    }
+
+    if (toggleBtn) toggleBtn.addEventListener('click', openDrawer);
+    if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+    if (overlay) overlay.addEventListener('click', closeDrawer);
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Luxury Minimal Header",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Announcement Bar"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_announcement",
+      "label": "Show Announcement Bar",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "announcement_text",
+      "label": "Announcement Text",
+      "default": "Free Nationwide Delivery on Orders Over Rs. 3,000 · 100% Khalis & Lab-Tested"
+    },
+    {
+      "type": "header",
+      "content": "Brand & Logo"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo",
+      "label": "High-Res Gold Logo Emblem"
+    },
+    {
+      "type": "range",
+      "id": "logo_height",
+      "min": 32,
+      "max": 80,
+      "step": 2,
+      "unit": "px",
+      "label": "Logo Height",
+      "default": 46
+    },
+    {
+      "type": "text",
+      "id": "brand_title",
+      "label": "Brand Title",
+      "default": "TASTE HEVEN"
+    },
+    {
+      "type": "text",
+      "id": "brand_subtitle",
+      "label": "Brand Subtitle",
+      "default": "PURE PANTRY DELICACIES"
+    },
+    {
+      "type": "link_list",
+      "id": "menu",
+      "label": "Navigation Menu",
+      "default": "main-menu"
+    },
+    {
+      "type": "header",
+      "content": "WhatsApp Integration"
+    },
+    {
+      "type": "text",
+      "id": "whatsapp_phone",
+      "label": "WhatsApp Number (with country code)",
+      "default": "923248314001"
+    },
+    {
+      "type": "header",
+      "content": "Color Palette"
+    },
+    {
+      "type": "color",
+      "id": "header_bg",
+      "label": "Header Background Color",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "accent_gold",
+      "label": "Accent Gold Color",
+      "default": "#C5A880"
+    }
+  ]
+}
+{% endschema %}

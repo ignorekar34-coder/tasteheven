@@ -1,0 +1,53 @@
+[
+  {
+    "name": "Taste Heven Brand & Identity",
+    "settings": [
+      {
+        "type": "text",
+        "id": "store_domain",
+        "label": "Store Domain",
+        "default": "tasteheven.store"
+      },
+      {
+        "type": "text",
+        "id": "whatsapp_number",
+        "label": "WhatsApp Hotline Number",
+        "default": "923248314001"
+      },
+      {
+        "type": "image_picker",
+        "id": "favicon",
+        "label": "Favicon Image (32x32)"
+      }
+    ]
+  },
+  {
+    "name": "Colors (Style 2 White)",
+    "settings": [
+      {
+        "type": "color",
+        "id": "color_bg",
+        "label": "Store Background Color",
+        "default": "#FFFFFF"
+      },
+      {
+        "type": "color",
+        "id": "color_header_footer",
+        "label": "Header & Footer Background",
+        "default": "#000000"
+      },
+      {
+        "type": "color",
+        "id": "color_gold_accent",
+        "label": "Luxury Accent Gold",
+        "default": "#C5A880"
+      },
+      {
+        "type": "color",
+        "id": "color_text_body",
+        "label": "Body Text Color",
+        "default": "#111111"
+      }
+    ]
+  }
+]

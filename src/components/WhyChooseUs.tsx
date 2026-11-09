@@ -1,142 +1,121 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { ShieldCheck, Sparkles, PackageCheck, Truck, Award, CheckCircle } from 'lucide-react';
+import { Sun, Droplets, Sparkles, Clock, ShieldCheck, CheckCircle } from 'lucide-react';
 
-export const DEFAULT_RAW_INGREDIENTS_BANNER = '/src/assets/images/why_choose_us_organic_craft_1791803752526.jpg';
+export const DEFAULT_RAW_INGREDIENTS_BANNER = '/src/assets/images/meraki_hero_jars_1793444359915.jpg';
 
 interface WhyChooseUsProps {
   bannerImage?: string;
 }
 
 export const WhyChooseUs: React.FC<WhyChooseUsProps> = ({ bannerImage }) => {
-  const activeBanner = bannerImage || DEFAULT_RAW_INGREDIENTS_BANNER;
-  const pillars = [
+  const steps = [
     {
-      icon: ShieldCheck,
-      title: '100% Khalis & Lab Tested',
-      urduTitle: 'سو فیصد خالص اور ملاوٹ سے پاک',
-      desc: 'Our Sidr & Flora honeys are cold-extracted directly from beehives without heat-processing. Guaranteed 0% sugar feeding, no commercial glucose adulteration.',
+      number: '01',
+      title: 'Single-Origin Sourcing',
+      subtitle: 'Rajapuri Mangoes & Kinnaur Apples',
+      desc: 'We procure hand-selected raw green mangoes from Konkan farmers and crisp cold-climate apples from Himachal growers at peak crispness.',
     },
     {
-      icon: Sparkles,
-      title: 'Sun-Cured in Pure Sarson Oil',
-      urduTitle: 'اصلی کولہو کے سرسوں کا تیل',
-      desc: 'No synthetic acetic acid or commercial stabilizers. Our achars mature naturally under warm sunshine with cold-pressed Kachi Ghani mustard oil and stone-ground spices.',
+      number: '02',
+      title: 'Cold Wood-Pressed Oils',
+      subtitle: 'Traditional Wooden Ghani',
+      desc: 'Our oils are pressed unheated in small wooden mills, preserving vital enzymes, golden viscosity, and gentle pungent depth.',
     },
     {
-      icon: Award,
-      title: 'Shahi Murabbay in Pure Cardamom',
-      urduTitle: 'شاہی ذائقہ اور صحت بخش اجزاء',
-      desc: 'Slowly candied according to ancestral culinary wisdom with fragrant cardamom and saffron threads. Wholesome restorative treats for heart, brain, and vigor.',
+      number: '03',
+      title: 'Stone-Ground Whole Spices',
+      subtitle: 'Yellow Mustard & Whole Chilies',
+      desc: 'Cracked yellow mustard seeds, wild roasted fenugreek, Ceylon cinnamon quills, and Byadgi red chilies bruised on granite stones.',
     },
     {
-      icon: PackageCheck,
-      title: 'Airtight Food-Grade Glass Jars',
-      urduTitle: 'محفوظ اور جراثیم سے پاک شیشے کی پیکنگ',
-      desc: 'We never compromise with cheap plastic containers. All products are sealed in heavy food-grade glass jars to preserve authentic aroma, crunch, and nutritional enzymes.',
-    },
-    {
-      icon: Truck,
-      title: 'Express Delivery with COD',
-      urduTitle: 'پورے پاکستان میں کیش آن ڈیلیوری',
-      desc: 'Shipped safely with shock-absorbent multi-layer bubble wrap to your doorstep across Karachi, Lahore, Islamabad, Rawalpindi, and every city.',
+      number: '04',
+      title: '21-Day Bharani Curing',
+      subtitle: 'Traditional Glazed Stoneware',
+      desc: 'Every jar is matured under Pune’s golden morning sunlight inside porous ceramic jars, allowing natural probiotics to bloom slowly.',
     },
   ];
 
   return (
-    <section id="why-choose-us" className="py-20 bg-white border-b border-[#0A0A0A]/10">
+    <section id="our-process" className="py-20 sm:py-28 bg-[#EDE7DD] border-b border-[#4A2C1A]/10 text-[#4A2C1A]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Editorial Section Header */}
-        <div className="max-w-3xl mx-auto text-center mb-14">
-          <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#0A0A0A] bg-stone-50 border border-[#D4AF37]/50 px-4 py-1.5 rounded-full mb-3.5 shadow-2xs">
-            <CheckCircle className="w-3.5 h-3.5 text-[#D4AF37]" />
-            <span>The Taste Heven Promise</span>
+        
+        {/* Section Header */}
+        <div className="max-w-2xl mx-auto text-center mb-16 space-y-3">
+          <div className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.22em] text-[#4A2C1A]/70 bg-[#FAF8F5] border border-[#4A2C1A]/15 px-3 py-1 rounded-full">
+            <Clock className="w-3.5 h-3.5 text-[#4A2C1A]" />
+            <span>The Slow Method</span>
           </div>
-          <h2 className="font-serif text-3xl sm:text-5xl font-bold text-[#0A0A0A] tracking-tight leading-tight">
-            Why Discerning Pakistani Families
-            <span className="block italic text-[#D4AF37] font-serif font-normal">
-              Choose Taste Heven
-            </span>
+
+          <h2 className="font-serif text-3xl sm:text-5xl font-normal text-[#4A2C1A] tracking-tight">
+            Our Process: The Ritual of Patience
           </h2>
-          <p className="text-stone-600 text-sm sm:text-base mt-3 max-w-xl mx-auto leading-relaxed font-medium">
-            In an era of industrial shortcuts and artificial flavors, Taste Heven revives the pure, wholesome taste that once graced our grandparents’ pantries.
+
+          <p className="text-sm sm:text-base text-[#4A2C1A]/80 font-light leading-relaxed">
+            In an era of artificial preservatives and rushed production, Meraki preserves are crafted with deliberate slowness in Pune.
           </p>
         </div>
 
-        {/* 2-Column Split: Visual Craftsmanship Showcase + Feature Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          {/* Craft Photo in Rounded Container */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-100px' }}
-            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
-            className="lg:col-span-5"
-          >
-            <div className="relative rounded-[32px] overflow-hidden bg-white border border-[#0A0A0A]/10 shadow-lg aspect-4/3 lg:aspect-square group">
-              <img
-                key={activeBanner}
-                src={activeBanner}
-                alt="Raw authentic spices, wild honeycomb and traditional preparation at Taste Heven"
-                referrerPolicy="no-referrer"
-                loading="lazy"
-                decoding="async"
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = DEFAULT_RAW_INGREDIENTS_BANNER;
-                }}
-                className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700 ease-out"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent flex flex-col justify-end p-7 text-left">
-                <span className="text-[#D4AF37] font-serif text-base italic">
-                  Artisanal Craftsmanship
-                </span>
-                <h3 className="font-serif text-2xl font-bold text-white mt-1 leading-snug">
-                  Pure Raw Ingredients From Nature’s Heart
+        {/* 4 Process Step Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {steps.map((step, idx) => (
+            <motion.div
+              key={step.number}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: idx * 0.1 }}
+              className="bg-[#FAF8F5] border border-[#4A2C1A]/15 p-7 flex flex-col justify-between text-left space-y-6 shadow-xs hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-center justify-between border-b border-[#4A2C1A]/10 pb-4">
+                <span className="font-serif text-2xl text-[#4A2C1A]/40 font-light">{step.number}</span>
+                <span className="w-2 h-2 rounded-full bg-[#4A2C1A]/30" />
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="font-serif text-xl text-[#4A2C1A] font-normal tracking-tight">
+                  {step.title}
                 </h3>
-                <p className="text-xs text-stone-300 mt-1.5 max-w-sm leading-relaxed">
-                  Harvested with patience, prepared with love, delivered with honor.
+                <p className="text-xs uppercase tracking-wider text-[#4A2C1A]/60 font-medium">
+                  {step.subtitle}
+                </p>
+                <p className="text-xs text-[#4A2C1A]/75 font-light leading-relaxed pt-1">
+                  {step.desc}
                 </p>
               </div>
-            </div>
-          </motion.div>
 
-          {/* Pillars List with rounded-[28px] cards and 0.07s stagger */}
-          <div className="lg:col-span-7 space-y-3.5 text-left">
-            {pillars.map((item, index) => {
-              const Icon = item.icon;
-              return (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-100px' }}
-                  transition={{ duration: 0.4, delay: index * 0.07, ease: [0.16, 1, 0.3, 1] }}
-                  style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
-                  className="p-5 rounded-[28px] bg-white border border-[#0A0A0A]/10 hover:border-[#D4AF37]/60 hover:shadow-lg transition-all flex items-start gap-4 md:hover:-translate-y-1"
-                >
-                  <div className="p-3 rounded-2xl bg-[#0A0A0A] text-[#D4AF37] border border-[#D4AF37]/40 shrink-0 mt-0.5 shadow-xs">
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex flex-wrap items-baseline gap-2.5 mb-1">
-                      <h4 className="font-serif text-lg font-bold text-[#0A0A0A]">
-                        {item.title}
-                      </h4>
-                      <span className="font-serif text-xs text-[#D4AF37] font-semibold">
-                        {item.urduTitle}
-                      </span>
-                    </div>
-                    <p className="text-xs sm:text-sm text-stone-600 leading-relaxed font-normal">
-                      {item.desc}
-                    </p>
-                  </div>
-                </motion.div>
-              );
-            })}
+              <div className="pt-2 text-[10px] tracking-widest uppercase text-[#4A2C1A]/50 font-medium">
+                Zero Chemical Preservatives
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Philosophy Callout Strip */}
+        <div id="philosophy" className="mt-16 bg-[#FAF8F5] border border-[#4A2C1A]/15 p-8 sm:p-12 text-left">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-8 space-y-3">
+              <span className="text-xs uppercase tracking-[0.22em] text-[#4A2C1A]/60 font-medium">
+                The Objects of Taste
+              </span>
+              <h3 className="font-serif text-2xl sm:text-3xl text-[#4A2C1A] font-normal leading-snug">
+                Made in limited batches, numbered by jar, and bottled by hand in Pune.
+              </h3>
+              <p className="text-sm text-[#4A2C1A]/80 font-light leading-relaxed max-w-2xl">
+                We believe that preserves should be treated like fine wine or bespoke objects: allowed to develop complex character through time, warmth, and unhurried natural oil curing.
+              </p>
+            </div>
+            <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3 justify-center">
+              <div className="px-5 py-3 bg-[#EDE7DD] border border-[#4A2C1A]/15 text-xs text-[#4A2C1A]">
+                <strong>Batch Run:</strong> 150 Jars per harvest
+              </div>
+              <div className="px-5 py-3 bg-[#EDE7DD] border border-[#4A2C1A]/15 text-xs text-[#4A2C1A]">
+                <strong>Packaging:</strong> Recyclable Amber Glass
+              </div>
+            </div>
           </div>
         </div>
+
       </div>
     </section>
   );

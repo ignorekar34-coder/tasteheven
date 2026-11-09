@@ -1,224 +1,219 @@
-import React from 'react';
-import { MessageCircle, Phone, MapPin, ShieldCheck, Truck, RefreshCw, Shield } from 'lucide-react';
-import { generateGeneralInquiryWhatsAppUrl } from '../utils/whatsapp';
+import React, { useState } from 'react';
+import { MapPin, Phone, Mail, ShieldCheck, Sun, Droplets, ArrowRight, Check } from 'lucide-react';
 import { ProductCategory } from '../types';
-import { TasteHevenLogo } from './TasteHevenLogo';
+import { MerakiLogo } from './MerakiLogo';
 
 interface FooterProps {
-  onSelectCategory: (cat: ProductCategory) => void;
+  onSelectCategory?: (cat: ProductCategory) => void;
   onOpenAdmin: () => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({ onSelectCategory, onOpenAdmin }) => {
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email) {
+      setSubscribed(true);
+      setTimeout(() => {
+        setEmail('');
+        setSubscribed(false);
+      }, 4000);
+    }
+  };
+
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
-    <footer className="bg-[#0A0A0A] text-white border-t border-[#D4AF37]/30">
-      {/* Pre-footer Trust Strip */}
-      <div className="border-b border-[#D4AF37]/20 bg-[#121212] py-6">
+    <footer className="bg-[#4A2C1A] text-[#F5F1EB] border-t border-[#F5F1EB]/10 select-none">
+      {/* 1. Pre-footer Minimalist Pillars */}
+      <div className="border-b border-[#F5F1EB]/10 py-10 sm:py-12 bg-[#3D2314]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-[#0A0A0A] text-white border border-[#D4AF37]/40 shadow-xs">
-                <ShieldCheck className="w-5 h-5 text-[#D4AF37]" />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-left">
+            
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-full border border-[#F5F1EB]/20 bg-[#F5F1EB]/5 flex items-center justify-center shrink-0">
+                <Sun className="w-4 h-4 text-[#E8DFC8]" />
               </div>
               <div>
-                <p className="text-xs font-bold text-white">100% Khalis Quality</p>
-                <p className="text-[11px] text-[#D4AF37]/80">Pure raw ingredients only</p>
+                <h4 className="font-serif text-base text-[#F5F1EB]">21-Day Sun Cured</h4>
+                <p className="text-xs text-[#F5F1EB]/70 mt-1 leading-relaxed">
+                  Steeped under natural daylight in traditional glazed ceramic bharanis.
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-[#0A0A0A] text-white border border-[#D4AF37]/40 shadow-xs">
-                <Truck className="w-5 h-5 text-[#D4AF37]" />
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-full border border-[#F5F1EB]/20 bg-[#F5F1EB]/5 flex items-center justify-center shrink-0">
+                <Droplets className="w-4 h-4 text-[#E8DFC8]" />
               </div>
               <div>
-                <p className="text-xs font-bold text-white">Cash On Delivery</p>
-                <p className="text-[11px] text-[#D4AF37]/80">All cities & towns in Pakistan</p>
+                <h4 className="font-serif text-base text-[#F5F1EB]">Cold Wood-Pressed Oils</h4>
+                <p className="text-xs text-[#F5F1EB]/70 mt-1 leading-relaxed">
+                  Pure Kachi Ghani mustard and sesame oils with zero chemical solvents.
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-[#0A0A0A] text-white border border-[#D4AF37]/40 shadow-xs">
-                <RefreshCw className="w-5 h-5 text-[#D4AF37]" />
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-full border border-[#F5F1EB]/20 bg-[#F5F1EB]/5 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-4 h-4 text-[#E8DFC8]" />
               </div>
               <div>
-                <p className="text-xs font-bold text-white">Food-Grade Glass Jars</p>
-                <p className="text-[11px] text-[#D4AF37]/80">Zero breakage guarantee</p>
+                <h4 className="font-serif text-base text-[#F5F1EB]">Zero Preservatives</h4>
+                <p className="text-xs text-[#F5F1EB]/70 mt-1 leading-relaxed">
+                  No synthetic vinegar, preservatives, or artificial colors ever used.
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-[#0A0A0A] text-white border border-[#D4AF37]/40 shadow-xs">
-                <MessageCircle className="w-5 h-5 text-[#D4AF37]" />
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-full border border-[#F5F1EB]/20 bg-[#F5F1EB]/5 flex items-center justify-center shrink-0">
+                <MapPin className="w-4 h-4 text-[#E8DFC8]" />
               </div>
               <div>
-                <p className="text-xs font-bold text-white">WhatsApp Ordering</p>
-                <p className="text-[11px] text-[#D4AF37]/80">0324-8314001 (24/7)</p>
+                <h4 className="font-serif text-base text-[#F5F1EB]">Crafted in Pune</h4>
+                <p className="text-xs text-[#F5F1EB]/70 mt-1 leading-relaxed">
+                  Freshly bottled in small numbered batches in Koregaon Park, Pune.
+                </p>
               </div>
             </div>
+
           </div>
         </div>
       </div>
 
-      {/* Main Footer Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12">
-          {/* Brand Info & WhatsApp CTA */}
-          <div className="md:col-span-5 space-y-4 text-left">
-            {/* New Official Circular Badge Logo */}
-            <div>
-              <TasteHevenLogo variant="lockup" size={56} theme="dark" />
+      {/* 2. Main Footer Body */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 text-left">
+          
+          {/* Brand Philosophy */}
+          <div className="md:col-span-5 space-y-5">
+            <MerakiLogo theme="dark" size="lg" />
+            <p className="text-xs sm:text-sm text-[#F5F1EB]/75 font-light leading-relaxed max-w-sm">
+              Meraki Pantry is an artisanal food atelier based in Pune, devoted to preserving heritage Indian recipes through the quiet luxury of slow methods, pure cold oils, and sun-ripened fruit.
+            </p>
+            <div className="pt-2 text-xs text-[#F5F1EB]/60 space-y-1.5 font-light">
+              <p className="flex items-center gap-2">
+                <MapPin className="w-3.5 h-3.5 text-[#E8DFC8]" />
+                <span>Koregaon Park, Lane 7, Pune, MH 411001</span>
+              </p>
+              <p className="flex items-center gap-2">
+                <Phone className="w-3.5 h-3.5 text-[#E8DFC8]" />
+                <span>Atelier Line: +91 98765 43210</span>
+              </p>
+              <p className="flex items-center gap-2">
+                <Mail className="w-3.5 h-3.5 text-[#E8DFC8]" />
+                <span>concierge@merakipantry.in</span>
+              </p>
             </div>
+          </div>
 
-            <p className="text-xs sm:text-sm text-stone-300 leading-relaxed max-w-sm">
-              Dedicated to reviving pure Pakistani culinary heritage. Handcrafted with cold-pressed oils,
-              raw wild blooms, and wholesome fruits in certified hygienic glass jars.
+          {/* Navigation Links */}
+          <div className="md:col-span-3 space-y-4">
+            <h4 className="font-serif text-lg text-[#F5F1EB] tracking-wide">The Objects</h4>
+            <ul className="space-y-2.5 text-xs text-[#F5F1EB]/75 tracking-wider uppercase font-medium">
+              <li>
+                <button
+                  onClick={() => scrollTo('products')}
+                  className="hover:text-[#F5F1EB] transition-colors cursor-pointer"
+                >
+                  Raw Mango Pickle (300g)
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => scrollTo('products')}
+                  className="hover:text-[#F5F1EB] transition-colors cursor-pointer"
+                >
+                  Apple Murabba (350g)
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => scrollTo('products')}
+                  className="hover:text-[#F5F1EB] transition-colors cursor-pointer"
+                >
+                  Apple Murabba with Saffron (350g)
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => scrollTo('our-process')}
+                  className="hover:text-[#F5F1EB] transition-colors cursor-pointer"
+                >
+                  Bharani Curing Method
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => scrollTo('reviews')}
+                  className="hover:text-[#F5F1EB] transition-colors cursor-pointer"
+                >
+                  Customer Impressions
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          {/* Newsletter / Seasonal Batch Dispatch */}
+          <div className="md:col-span-4 space-y-4">
+            <h4 className="font-serif text-lg text-[#F5F1EB] tracking-wide">The Small-Batch Gazette</h4>
+            <p className="text-xs text-[#F5F1EB]/75 leading-relaxed font-light">
+              Receive private invitations when new seasonal harvests of mangoes or Kashmiri saffron preserves are uncorked.
             </p>
 
-            {/* Founders / Owners Credit */}
-            <div className="p-3.5 bg-[#141414] rounded-2xl border border-[#D4AF37]/30 text-xs text-stone-200">
-              <p className="font-bold text-white uppercase tracking-wider text-[11px]">Store Founders & Owners:</p>
-              <p className="text-sm font-semibold text-[#D4AF37] mt-0.5 font-serif">
-                Ahmad Waseem & Farman Ali
-              </p>
-              <p className="text-[11px] text-stone-400 mt-1">
-                Direct Contact & Inquiries: <span className="text-white font-mono">0324-8314001</span>
-              </p>
-            </div>
+            <form onSubmit={handleSubscribe} className="space-y-2 pt-1">
+              <div className="flex items-stretch border border-[#F5F1EB]/30 bg-[#F5F1EB]/5 focus-within:border-[#F5F1EB]">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email address"
+                  required
+                  className="px-3.5 py-2.5 bg-transparent text-xs text-[#F5F1EB] placeholder-[#F5F1EB]/40 outline-none w-full font-light"
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2.5 bg-[#F5F1EB] text-[#4A2C1A] text-xs font-medium tracking-wider uppercase hover:bg-[#E8DFC8] transition-colors cursor-pointer shrink-0"
+                >
+                  {subscribed ? <Check className="w-4 h-4 text-emerald-800" /> : 'Join'}
+                </button>
+              </div>
+              {subscribed && (
+                <p className="text-[11px] text-[#E8DFC8]">
+                  Thank you. You have been added to our private release list.
+                </p>
+              )}
+            </form>
 
-            {/* Prominent WhatsApp Order button (Luxury Gold & Black) */}
             <div className="pt-2">
-              <a
-                href={generateGeneralInquiryWhatsAppUrl('Footer Order Link')}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2.5 px-6 py-3.5 bg-[#D4AF37] hover:bg-[#F9E498] text-[#0A0A0A] font-bold text-xs sm:text-sm rounded-full shadow-lg transition-all hover:scale-[1.02]"
+              <button
+                onClick={onOpenAdmin}
+                className="text-[11px] text-[#F5F1EB]/50 hover:text-[#F5F1EB]/90 underline tracking-wider uppercase transition-colors cursor-pointer"
               >
-                <MessageCircle className="w-5 h-5 fill-[#0A0A0A] text-[#0A0A0A]" />
-                <span>Order on WhatsApp: 0324-8314001</span>
-              </a>
-            </div>
-
-            <div className="p-3 bg-[#141414] rounded-2xl border border-white/10 text-xs">
-              <p className="font-bold text-[#D4AF37]">EasyPaisa & Advance Payment Account:</p>
-              <p className="font-mono text-white text-sm mt-0.5 tracking-wider font-semibold">
-                0324-8314001
-              </p>
-              <p className="text-[11px] text-stone-400">Account: Taste Heven · Cash on Delivery (COD) also accepted</p>
+                Atelier Staff Portal
+              </button>
             </div>
           </div>
 
-          {/* Quick Category Links */}
-          <div className="md:col-span-3 space-y-3 text-left">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[#D4AF37] font-serif">
-              Our Specialties
-            </h4>
-            <ul className="space-y-2.5 text-xs text-stone-300">
-              <li>
-                <a
-                  href="#products"
-                  onClick={() => onSelectCategory('honey')}
-                  className="hover:text-[#D4AF37] transition-colors"
-                >
-                  Pure Sidr (Beri) Honey
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#products"
-                  onClick={() => onSelectCategory('honey')}
-                  className="hover:text-[#D4AF37] transition-colors"
-                >
-                  Raw Phulai Wildflower Honey
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#products"
-                  onClick={() => onSelectCategory('achar')}
-                  className="hover:text-[#D4AF37] transition-colors"
-                >
-                  Traditional Mustard Oil Mango Achar
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#products"
-                  onClick={() => onSelectCategory('achar')}
-                  className="hover:text-[#D4AF37] transition-colors"
-                >
-                  Chatpata Garlic (Lehsan) Achar
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#products"
-                  onClick={() => onSelectCategory('murabba')}
-                  className="hover:text-[#D4AF37] transition-colors"
-                >
-                  Royal Kashmiri Seb (Apple) Murabba
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#products"
-                  onClick={() => onSelectCategory('murabba')}
-                  className="hover:text-[#D4AF37] transition-colors"
-                >
-                  Traditional Amla & Gajar Murabbay
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Delivery & Contact Info */}
-          <div className="md:col-span-4 space-y-3 text-left">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[#D4AF37] font-serif">
-              Order & Delivery Inquiries
-            </h4>
-            <ul className="space-y-3 text-xs text-stone-300">
-              <li className="flex items-start gap-2.5">
-                <Phone className="w-4 h-4 text-[#D4AF37] shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-semibold text-white block">WhatsApp & Helpline</span>
-                  <span className="text-stone-400">+92 324 8314001 (10 AM - 10 PM)</span>
-                </div>
-              </li>
-              <li className="flex items-start gap-2.5">
-                <Truck className="w-4 h-4 text-[#D4AF37] shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-semibold text-white block">Nationwide Delivery</span>
-                  <span className="text-stone-400">
-                    Lahore, Karachi, Islamabad: 2-3 Days<br />
-                    Other Cities & Districts: 3-4 Days
-                  </span>
-                </div>
-              </li>
-              <li className="flex items-start gap-2.5">
-                <MapPin className="w-4 h-4 text-[#D4AF37] shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-semibold text-white block">Pantry Headquarters</span>
-                  <span className="text-stone-400">Artisanal Estate, Lahore, Pakistan</span>
-                </div>
-              </li>
-            </ul>
-          </div>
         </div>
+      </div>
 
-        {/* Bottom Copyright & Disclaimer */}
-        <div className="mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between text-xs text-stone-400 gap-3">
-          <p>© {new Date().getFullYear()} Taste Heven. All Rights Reserved. Fine Food Experience.</p>
-          <div className="flex items-center gap-4 text-xs">
-            <span>Cash on Delivery (COD)</span>
+      {/* 3. Bottom Bar */}
+      <div className="border-t border-[#F5F1EB]/10 py-6 bg-[#381F12] text-xs text-[#F5F1EB]/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p>© {new Date().getFullYear()} MERAKI PANTRY. Handcrafted in Pune, Maharashtra. All rights reserved.</p>
+          <div className="flex items-center gap-6 text-[11px] uppercase tracking-wider">
+            <span>FSSAI Certified</span>
             <span>·</span>
-            <span>EasyPaisa: 0324-8314001</span>
+            <span>Food-Grade Glass Packaging</span>
             <span>·</span>
-            <button
-              onClick={onOpenAdmin}
-              className="text-[#D4AF37] hover:text-[#F9E498] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
-            >
-              <Shield className="w-3 h-3" />
-              <span>Owners Portal</span>
-            </button>
+            <span>Pan-India Courier</span>
           </div>
         </div>
       </div>

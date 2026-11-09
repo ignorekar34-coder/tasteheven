@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Product } from '../types';
-import { X, Star, ShoppingBag, MessageCircle, ShieldCheck, Heart, Sparkles, ArrowLeft } from 'lucide-react';
-import { formatPKR, generateSingleProductWhatsAppUrl } from '../utils/whatsapp';
+import { X, Star, ShoppingBag, ArrowLeft, Check, Sparkles, Droplets, Sun } from 'lucide-react';
+import { generateSingleProductWhatsAppUrl } from '../utils/whatsapp';
 
 interface ProductModalProps {
   product: Product | null;
@@ -32,17 +32,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     setTimeout(() => {
       setAdded(false);
       onClose();
-    }, 700);
+    }, 800);
   };
 
-  const whatsAppUrl = generateSingleProductWhatsAppUrl(
-    product,
-    selectedWeight,
-    activePrice,
-    quantity
-  );
-
-  React.useEffect(() => {
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
@@ -53,248 +46,149 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 overflow-y-auto bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4"
+      className="fixed inset-0 z-50 overflow-y-auto bg-[#381F12]/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6"
     >
-      {/* Modal Container */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative bg-white rounded-[32px] max-w-3xl w-full overflow-hidden shadow-2xl border border-[#D4AF37]/50 animate-in fade-in zoom-in-95 duration-200"
+        className="relative bg-[#FAF8F5] border border-[#4A2C1A]/20 max-w-3xl w-full overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200 text-[#4A2C1A]"
       >
-        {/* Top-Left Back Button */}
+        {/* Top Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 left-4 z-20 flex items-center gap-2 px-3.5 py-2 rounded-full bg-white/95 hover:bg-[#0A0A0A] text-[#0A0A0A] hover:text-[#D4AF37] transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg border-2 border-[#D4AF37] text-xs sm:text-sm font-bold group"
-          aria-label="Back to products"
-        >
-          <ArrowLeft className="w-4 h-4 text-[#D4AF37] group-hover:-translate-x-1 transition-transform" />
-          <span>&lt; Back to Products</span>
-          <span className="hidden sm:inline text-[11px] text-stone-500 group-hover:text-stone-300 font-medium">
-            (ہوم پیج)
-          </span>
-        </button>
-
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-20 p-2.5 rounded-full bg-white/95 hover:bg-[#0A0A0A] text-[#0A0A0A] hover:text-[#D4AF37] transition-colors cursor-pointer shadow-md border border-stone-300"
+          className="absolute top-4 right-4 z-20 p-2 bg-[#FAF8F5]/90 hover:bg-[#FAF8F5] text-[#4A2C1A] border border-[#4A2C1A]/20 rounded-full transition-colors cursor-pointer shadow-xs"
           aria-label="Close product view"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
 
         <div className="grid grid-cols-1 md:grid-cols-2">
-          {/* Product Image Column */}
-          <div className="relative bg-stone-100 min-h-[300px] md:min-h-full">
-            {(() => {
-              const categoryFallback =
-                product.category === 'achar'
-                  ? '/src/assets/images/product_traditional_mango_achar_1791803728636.jpg'
-                  : product.category === 'murabba'
-                  ? '/src/assets/images/product_shahi_amla_murabba_1791803749444.jpg'
-                  : '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
-              const imgSrc = product.image || categoryFallback;
-
-              return (
-                <img
-                  key={imgSrc}
-                  src={imgSrc}
-                  alt={product.name}
-                  referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = categoryFallback;
-                  }}
-                  className="w-full h-full object-cover object-center"
-                />
-              );
-            })()}
-            {/* Badges - positioned cleanly below the back button */}
-            <div className="absolute top-16 left-4 flex flex-col gap-1.5 items-start z-10">
-              {product.featured && (
-                <span className="bg-[#0A0A0A]/95 text-[#D4AF37] text-xs font-bold px-3 py-1 rounded-full border border-[#D4AF37] shadow-xs flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-[#D4AF37]" />
-                  Featured
-                </span>
-              )}
-              {product.badge && (
-                <span className="bg-white/95 text-[#0A0A0A] text-xs font-bold px-3 py-1 rounded-full border border-[#D4AF37]/50 shadow-xs">
-                  {product.badge}
-                </span>
-              )}
-            </div>
+          {/* Image Column */}
+          <div className="relative aspect-square md:aspect-auto bg-[#EDE7DD] overflow-hidden">
+            <img
+              src={product.image}
+              alt={product.name}
+              className="w-full h-full object-cover object-center"
+            />
+            {product.badge && (
+              <div className="absolute top-4 left-4 bg-[#FAF8F5]/95 border border-[#4A2C1A]/20 text-[#4A2C1A] text-[10px] tracking-[0.2em] uppercase font-medium px-2.5 py-1">
+                {product.badge}
+              </div>
+            )}
           </div>
 
           {/* Details Column */}
-          <div className="p-6 md:p-8 flex flex-col justify-between max-h-[85vh] overflow-y-auto text-left">
+          <div className="p-6 sm:p-8 flex flex-col justify-between max-h-[85vh] overflow-y-auto text-left space-y-6">
             <div>
               {/* Category & Rating */}
-              <div className="flex items-center justify-between text-xs text-stone-500 mb-2">
-                <span className="uppercase tracking-wider font-bold text-[#0A0A0A]">
-                  {product.category === 'honey'
-                    ? 'Pure Honey (شہد)'
-                    : product.category === 'achar'
-                    ? 'Traditional Achar (اچار)'
-                    : 'Lazeez Murabba (مربہ)'}
+              <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.2em] text-[#4A2C1A]/60 font-medium mb-1.5">
+                <span>{product.category === 'achar' ? 'Artisanal Pickle' : 'Ayurvedic Murabba'}</span>
+                <span className="flex items-center gap-1 text-[#4A2C1A]">
+                  <Star className="w-3.5 h-3.5 fill-[#D49B45] text-[#D49B45]" />
+                  <span>{product.rating} ({product.reviewCount} notes)</span>
                 </span>
-                <div className="flex items-center gap-1 text-[#0A0A0A] font-semibold bg-stone-50 px-2.5 py-0.5 rounded-full border border-[#D4AF37]/30">
-                  <Star className="w-3.5 h-3.5 fill-[#D4AF37] text-[#D4AF37]" />
-                  <span className="tabular-nums font-bold">{product.rating}</span>
-                  <span className="text-stone-400">({product.reviewCount})</span>
-                </div>
               </div>
 
-              {/* Title & Urdu Name */}
-              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#0A0A0A] leading-snug">
+              {/* Product Name in Serif */}
+              <h2 className="font-serif text-2xl sm:text-3xl font-normal text-[#4A2C1A] tracking-tight">
                 {product.name}
               </h2>
-              <p className="text-sm font-semibold text-[#D4AF37] font-serif mb-4">
-                {product.urduName}
-              </p>
 
               {/* Price */}
-              <div className="flex items-baseline gap-3 mb-4 pb-4 border-b border-stone-200">
-                <span className="font-serif text-3xl font-bold text-[#0A0A0A] tabular-nums">
-                  {formatPKR(activePrice * quantity)}
+              <div className="mt-3 pb-4 border-b border-[#4A2C1A]/10 flex items-baseline gap-3">
+                <span className="font-serif text-2xl font-semibold text-[#4A2C1A]">
+                  Rs {(activePrice * quantity).toLocaleString()}
                 </span>
-                {product.originalPrice && (
-                  <span className="text-sm text-stone-400 line-through tabular-nums">
-                    {formatPKR(product.originalPrice * quantity)}
-                  </span>
-                )}
-                <span className="text-xs text-[#0A0A0A] font-semibold bg-stone-50 border border-[#D4AF37]/40 px-3 py-1 rounded-full ml-auto">
-                  100% Khalis & Raw
+                <span className="text-xs text-[#4A2C1A]/60">
+                  (Rs {activePrice.toLocaleString()} per jar)
                 </span>
               </div>
 
               {/* Description */}
-              <p className="text-xs sm:text-sm text-stone-600 leading-relaxed mb-5">
+              <p className="text-xs sm:text-sm text-[#4A2C1A]/80 font-light leading-relaxed mt-4">
                 {product.fullDesc}
               </p>
 
-              {/* Health Benefits */}
-              <div className="mb-5">
-                <h4 className="text-xs font-bold text-[#0A0A0A] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <Heart className="w-3.5 h-3.5 text-[#B91C1C]" />
-                  <span>Key Natural Benefits:</span>
-                </h4>
-                <ul className="space-y-1.5">
-                  {product.benefits.map((benefit, i) => (
-                    <li key={i} className="text-xs text-stone-700 flex items-start gap-2">
-                      <span className="text-[#D4AF37] font-bold shrink-0 mt-0.5">✓</span>
-                      <span>{benefit}</span>
-                    </li>
+              {/* Weight Selector */}
+              <div className="mt-5 space-y-2">
+                <span className="text-[11px] uppercase tracking-wider text-[#4A2C1A]/60 block font-medium">
+                  Select Size
+                </span>
+                <div className="flex items-center gap-2">
+                  {product.weightOptions.map((opt) => (
+                    <button
+                      key={opt.weight}
+                      onClick={() => setSelectedWeight(opt.weight)}
+                      className={`text-xs px-3.5 py-1.5 uppercase tracking-wider font-medium border transition-colors cursor-pointer ${
+                        selectedWeight === opt.weight
+                          ? 'border-[#4A2C1A] bg-[#4A2C1A] text-[#F5F1EB]'
+                          : 'border-[#4A2C1A]/20 bg-transparent text-[#4A2C1A]/70 hover:border-[#4A2C1A]/50'
+                      }`}
+                    >
+                      {opt.weight} — Rs {opt.price.toLocaleString()}
+                    </button>
                   ))}
-                </ul>
+                </div>
               </div>
 
-              {/* Ingredients */}
-              <div className="mb-6">
-                <h4 className="text-xs font-bold text-[#0A0A0A] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  <span>Pure Ingredients:</span>
-                </h4>
+              {/* Ingredients List */}
+              <div className="mt-5 space-y-2">
+                <span className="text-[11px] uppercase tracking-wider text-[#4A2C1A]/60 block font-medium">
+                  Artisanal Ingredients
+                </span>
                 <div className="flex flex-wrap gap-1.5">
                   {product.ingredients.map((ing, i) => (
                     <span
                       key={i}
-                      className="text-xs bg-stone-50 text-[#0A0A0A] border border-[#D4AF37]/30 px-3 py-1 rounded-full font-medium"
+                      className="text-[11px] bg-[#EDE7DD] text-[#4A2C1A] border border-[#4A2C1A]/15 px-2.5 py-1"
                     >
                       {ing}
                     </span>
                   ))}
                 </div>
               </div>
-
-              {/* Jar Size Selector */}
-              <div className="mb-5">
-                <label className="text-xs font-bold text-stone-600 uppercase tracking-wider block mb-2">
-                  Choose Jar Size:
-                </label>
-                <div className="flex gap-2">
-                  {product.weightOptions.map((opt) => (
-                    <button
-                      key={opt.weight}
-                      onClick={() => setSelectedWeight(opt.weight)}
-                      className={`flex-1 py-2 px-3 rounded-full text-xs font-bold border transition-all cursor-pointer ${
-                        selectedWeight === opt.weight
-                          ? 'bg-[#0A0A0A] text-[#D4AF37] border-[#D4AF37] shadow-xs'
-                          : 'bg-stone-50 text-[#0A0A0A] border-stone-200 hover:border-[#D4AF37]/40'
-                      }`}
-                    >
-                      <div>{opt.weight}</div>
-                      <div className="text-[11px] opacity-80 tabular-nums">
-                        {formatPKR(opt.price)}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Quantity Selector */}
-              <div className="flex items-center gap-4 mb-6">
-                <label className="text-xs font-bold text-stone-600 uppercase tracking-wider">
-                  Quantity:
-                </label>
-                <div className="flex items-center border border-stone-200 rounded-full overflow-hidden bg-white">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-3.5 py-1.5 text-[#0A0A0A] hover:bg-stone-100 text-sm font-bold cursor-pointer"
-                  >
-                    -
-                  </button>
-                  <span className="px-4 py-1.5 text-xs font-bold text-[#0A0A0A] tabular-nums min-w-[2.5rem] text-center">
-                    {quantity}
-                  </span>
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="px-3.5 py-1.5 text-[#0A0A0A] hover:bg-stone-100 text-sm font-bold cursor-pointer"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
             </div>
 
-            {/* Actions */}
-            <div className="space-y-2 pt-2 border-t border-stone-200">
-              <div className="grid grid-cols-2 gap-3">
+            {/* Action Bar */}
+            <div className="pt-4 border-t border-[#4A2C1A]/10 flex items-center gap-3">
+              {/* Quantity */}
+              <div className="flex items-center border border-[#4A2C1A]/20 bg-[#EDE7DD]">
                 <button
-                  onClick={handleAddToCart}
-                  className={`flex items-center justify-center gap-2 py-3.5 px-4 rounded-full text-xs font-bold transition-all cursor-pointer border ${
-                    added
-                      ? 'bg-[#D4AF37] text-[#0A0A0A] border-[#D4AF37]'
-                      : 'bg-[#0A0A0A] hover:bg-[#1A1A1A] text-white hover:text-[#D4AF37] border-[#D4AF37]/50 shadow-xs'
-                  }`}
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="px-3 py-2 text-xs font-bold text-[#4A2C1A] hover:bg-[#4A2C1A]/10 cursor-pointer"
                 >
-                  <ShoppingBag className="w-4 h-4 text-[#D4AF37]" />
-                  <span>{added ? 'Added to Cart!' : 'Add to Cart'}</span>
+                  -
                 </button>
-
-                <a
-                  href={whatsAppUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-full text-xs font-bold bg-[#D4AF37] hover:bg-[#F9E498] text-[#0A0A0A] shadow-xs transition-colors border border-[#AA8010]"
+                <span className="px-3 py-2 text-xs font-medium text-[#4A2C1A]">{quantity}</span>
+                <button
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="px-3 py-2 text-xs font-bold text-[#4A2C1A] hover:bg-[#4A2C1A]/10 cursor-pointer"
                 >
-                  <MessageCircle className="w-4 h-4 fill-[#0A0A0A] text-[#0A0A0A]" />
-                  <span>Order on WhatsApp</span>
-                </a>
+                  +
+                </button>
               </div>
 
-              {/* Bottom Return to Store Button */}
+              {/* Add to Cart */}
               <button
-                type="button"
-                onClick={onClose}
-                className="w-full py-2.5 bg-stone-100 hover:bg-stone-200 text-[#0A0A0A] font-semibold text-xs rounded-full flex items-center justify-center gap-2 border border-stone-300 transition-colors cursor-pointer"
+                onClick={handleAddToCart}
+                disabled={added}
+                className={`flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 text-xs font-medium tracking-wider uppercase transition-all duration-300 cursor-pointer ${
+                  added
+                    ? 'bg-emerald-800 text-white'
+                    : 'bg-[#4A2C1A] hover:bg-[#341d10] text-[#F5F1EB] shadow-xs hover:shadow-md'
+                }`}
               >
-                <ArrowLeft className="w-3.5 h-3.5 text-[#0A0A0A]" />
-                <span>← واپس پروڈکٹس پر جائیں (Back to Products)</span>
+                {added ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Added to Pantry Bag</span>
+                  </>
+                ) : (
+                  <>
+                    <ShoppingBag className="w-4 h-4" />
+                    <span>Add to Pantry Bag</span>
+                  </>
+                )}
               </button>
-
-              <div className="flex items-center justify-center gap-2 text-[11px] text-stone-500 pt-1 font-medium">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
-                <span>Safely packaged in sanitized food-grade glass jars.</span>
-              </div>
             </div>
           </div>
         </div>

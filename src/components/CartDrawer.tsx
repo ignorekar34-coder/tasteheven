@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CartItem, OrderRecord } from '../types';
-import { X, Trash2, ShoppingBag, MessageCircle, ArrowRight, ShieldCheck, Sparkles, ArrowLeft } from 'lucide-react';
-import { formatPKR, generateCartWhatsAppUrl, OrderCustomerInfo } from '../utils/whatsapp';
+import { X, Trash2, ShoppingBag, ArrowRight, ShieldCheck, Sparkles, Check } from 'lucide-react';
+import { WHATSAPP_NUMBER } from '../data/products';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -13,8 +13,8 @@ interface CartDrawerProps {
   onOrderPlaced?: (order: OrderRecord) => void;
 }
 
-const FREE_SHIPPING_THRESHOLD = 3500;
-const STANDARD_SHIPPING_FEE = 250;
+const FREE_SHIPPING_THRESHOLD = 999;
+const STANDARD_SHIPPING_FEE = 80;
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({
   isOpen,
@@ -28,10 +28,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   if (!isOpen) return null;
 
   const [showAddressForm, setShowAddressForm] = useState(false);
-  const [customer, setCustomer] = useState<OrderCustomerInfo>({
+  const [orderSuccess, setOrderSuccess] = useState(false);
+  const [customer, setCustomer] = useState({
     name: '',
     phone: '',
-    city: 'Lahore',
+    city: 'Pune',
     address: '',
     notes: '',
   });
@@ -47,145 +48,152 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const amountToFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
   const freeShippingProgress = Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100);
 
-  const whatsAppCheckoutUrl = generateCartWhatsAppUrl(
-    items,
-    subtotal,
-    shippingFee,
-    showAddressForm && customer.name ? customer : undefined
-  );
+  const handleCheckout = () => {
+    // Generate order record
+    const newOrder: OrderRecord = {
+      id: `mp-${Date.now().toString().slice(-6)}`,
+      orderNumber: `MP-${Date.now().toString().slice(-4)}`,
+      createdAt: new Date().toISOString(),
+      customerName: customer.name || 'Atelier Patron',
+      customerPhone: customer.phone || 'Inquiry',
+      city: customer.city || 'Pune',
+      address: customer.address || 'Direct Dispatch',
+      items: items,
+      subtotal,
+      shippingFee,
+      total: grandTotal,
+      status: 'pending',
+      notes: customer.notes || '',
+    };
+
+    if (onOrderPlaced) {
+      onOrderPlaced(newOrder);
+    }
+
+    // Direct WhatsApp message
+    const orderItemsSummary = items
+      .map((it) => `• ${it.product.name} (${it.selectedWeight}) x${it.quantity} = Rs ${(it.selectedPrice * it.quantity).toLocaleString()}`)
+      .join('\n');
+
+    const message = encodeURIComponent(
+      `*NEW ORDER — MERAKI PANTRY PUNE*\n\n` +
+      `*Patron:* ${customer.name || 'Customer'}\n` +
+      `*Phone:* ${customer.phone || 'N/A'}\n` +
+      `*City:* ${customer.city}\n` +
+      `*Address:* ${customer.address || 'To be shared'}\n\n` +
+      `*Preserves Ordered:*\n${orderItemsSummary}\n\n` +
+      `*Subtotal:* Rs ${subtotal.toLocaleString()}\n` +
+      `*Courier:* ${shippingFee === 0 ? 'COMPLIMENTARY' : `Rs ${shippingFee}`}\n` +
+      `*Total Payable:* Rs ${grandTotal.toLocaleString()}\n\n` +
+      `Please confirm batch bottling and dispatch date.`
+    );
+
+    const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
+    window.open(waUrl, '_blank');
+
+    setOrderSuccess(true);
+    setTimeout(() => {
+      onClearCart();
+      setOrderSuccess(false);
+      onClose();
+    }, 2000);
+  };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
+    <div className="fixed inset-0 z-50 overflow-hidden text-[#4A2C1A]">
       {/* Backdrop */}
       <div
         onClick={onClose}
-        className="absolute inset-0 bg-stone-900/50 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-[#381F12]/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-300"
       />
 
-      {/* Drawer */}
-      <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-white shadow-2xl flex flex-col border-l border-stone-200">
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+        <div className="w-screen max-w-md bg-[#FAF8F5] border-l border-[#4A2C1A]/15 shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-300">
+          
           {/* Header */}
-          <div className="p-4 sm:p-5 border-b border-[#0A0A0A]/10 flex items-center justify-between bg-stone-50">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={onClose}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-stone-200/80 hover:bg-stone-300 text-[#0A0A0A] text-xs font-semibold transition-colors cursor-pointer mr-1"
-                title="Back to Store"
-                aria-label="Back to Store"
-              >
-                <ArrowLeft className="w-3.5 h-3.5 text-[#0A0A0A]" />
-                <span>واپس (Back)</span>
-              </button>
-              <ShoppingBag className="w-5 h-5 text-[#0A0A0A]" />
-              <h2 className="font-serif text-lg sm:text-xl font-bold text-[#0A0A0A]">
-                Your Cart
-              </h2>
-              <span className="text-xs bg-[#D4AF37] text-[#0A0A0A] font-bold px-2.5 py-0.5 rounded-full border border-[#AA8010] tabular-nums">
+          <div className="p-6 border-b border-[#4A2C1A]/10 flex items-center justify-between bg-[#F5F1EB]">
+            <div className="flex items-center gap-2.5">
+              <ShoppingBag className="w-4 h-4 text-[#4A2C1A]" />
+              <h3 className="font-serif text-xl font-normal tracking-tight text-[#4A2C1A]">
+                Pantry Bag
+              </h3>
+              <span className="text-xs px-2 py-0.5 bg-[#4A2C1A]/10 text-[#4A2C1A] font-medium">
                 {items.length} {items.length === 1 ? 'item' : 'items'}
               </span>
             </div>
+
             <button
               onClick={onClose}
-              className="p-1.5 rounded-full text-stone-500 hover:text-black hover:bg-stone-200 transition-colors cursor-pointer"
-              aria-label="Close cart"
+              className="p-1.5 text-[#4A2C1A]/70 hover:text-[#4A2C1A] hover:bg-[#4A2C1A]/5 transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Free Shipping Progress Indicator */}
-          {items.length > 0 && (
-            <div className="bg-stone-100 border-b border-stone-200 p-3 sm:px-5">
-              <div className="flex items-center justify-between text-xs font-semibold text-[#0A0A0A] mb-1.5">
-                <span className="flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  {isFreeShipping ? (
-                    <span className="text-[#0A0A0A] font-bold">
-                      🎉 You have unlocked FREE Nationwide Delivery!
-                    </span>
-                  ) : (
-                    <span>
-                      Add <strong className="tabular-nums text-[#D4AF37]">{formatPKR(amountToFreeShipping)}</strong> more for FREE Delivery!
-                    </span>
-                  )}
-                </span>
-              </div>
-              <div className="w-full bg-stone-200 h-1.5 rounded-full overflow-hidden border border-stone-300">
-                <div
-                  className="bg-[#0A0A0A] h-full rounded-full transition-all duration-300"
-                  style={{ width: `${freeShippingProgress}%` }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Item List / Empty State */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
-            {items.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-6 text-stone-500">
-                <div className="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 mb-4">
-                  <ShoppingBag className="w-8 h-8" />
+          {/* Complimentary Courier Progress Banner */}
+          <div className="bg-[#EDE7DD] px-6 py-3 border-b border-[#4A2C1A]/10 text-xs">
+            {isFreeShipping ? (
+              <p className="font-medium text-[#4A2C1A] flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#C46835]" />
+                <span>Your order qualifies for complimentary Pune courier!</span>
+              </p>
+            ) : (
+              <div>
+                <p className="text-[#4A2C1A]/80 mb-1.5">
+                  Add <strong className="text-[#4A2C1A]">Rs {amountToFreeShipping.toLocaleString()}</strong> more for complimentary courier.
+                </p>
+                <div className="w-full bg-[#4A2C1A]/10 h-1.5 overflow-hidden">
+                  <div
+                    className="bg-[#4A2C1A] h-full transition-all duration-300"
+                    style={{ width: `${freeShippingProgress}%` }}
+                  />
                 </div>
-                <h3 className="font-serif text-lg font-bold text-stone-800 mb-1">
-                  Your cart is empty
-                </h3>
-                <p className="text-xs text-stone-500 max-w-xs mb-6">
-                  Add pure honey, spicy mango achar, or delicious murabba jars to begin your order.
+              </div>
+            )}
+          </div>
+
+          {/* Cart Item List */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            {items.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center py-12 space-y-3">
+                <div className="w-16 h-16 rounded-full bg-[#EDE7DD] flex items-center justify-center text-[#4A2C1A]/40 mb-2">
+                  <ShoppingBag className="w-7 h-7" />
+                </div>
+                <h4 className="font-serif text-lg font-normal text-[#4A2C1A]">
+                  Your pantry bag is empty
+                </h4>
+                <p className="text-xs text-[#4A2C1A]/60 max-w-xs font-light">
+                  Explore our small-batch mango pickles and apple murabba preserves to begin.
                 </p>
                 <button
                   onClick={onClose}
-                  className="flex items-center gap-2 px-6 py-3 bg-[#0A0A0A] hover:bg-[#1A1A1A] text-[#D4AF37] border border-[#D4AF37] text-xs font-bold rounded-full shadow-md transition-all cursor-pointer"
+                  className="mt-4 px-6 py-2.5 bg-[#4A2C1A] text-[#F5F1EB] text-xs uppercase tracking-wider font-medium hover:bg-[#341d10] cursor-pointer"
                 >
-                  <ArrowLeft className="w-4 h-4 text-[#D4AF37]" />
-                  <span>← واپس شاپنگ پر جائیں (Continue Shopping)</span>
+                  Explore Pantry
                 </button>
               </div>
             ) : (
               items.map((item) => (
                 <div
                   key={`${item.product.id}-${item.selectedWeight}`}
-                  className="flex gap-3 p-3 bg-stone-50 rounded-xl border border-stone-200/80 text-left"
+                  className="flex gap-4 p-3.5 bg-[#F5F1EB] border border-[#4A2C1A]/10 text-left items-center"
                 >
-                  {/* Thumbnail */}
                   <img
-                    src={item.product.image || '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg'}
+                    src={item.product.image}
                     alt={item.product.name}
-                    referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = '/src/assets/images/product_pure_sidr_honey_1791803704705.jpg';
-                    }}
-                    className="w-16 h-16 rounded-lg object-cover bg-stone-200 shrink-0 border border-stone-200"
+                    className="w-16 h-16 object-cover bg-[#EDE7DD] shrink-0"
                   />
+                  
+                  <div className="flex-1 min-w-0">
+                    <h5 className="font-serif text-sm font-normal text-[#4A2C1A] truncate">
+                      {item.product.name}
+                    </h5>
+                    <p className="text-[11px] text-[#4A2C1A]/60 uppercase tracking-wider">
+                      {item.selectedWeight} · Rs {item.selectedPrice.toLocaleString()}
+                    </p>
 
-                  {/* Info */}
-                  <div className="flex-1 flex flex-col justify-between min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="truncate">
-                        <h4 className="text-xs sm:text-sm font-bold text-stone-900 truncate">
-                          {item.product.name}
-                        </h4>
-                        <div className="text-[11px] text-stone-500 flex items-center gap-2 mt-0.5">
-                          <span>Size: {item.selectedWeight}</span>
-                          <span>·</span>
-                          <span className="font-medium text-emerald-800 tabular-nums">
-                            {formatPKR(item.selectedPrice)} each
-                          </span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => onRemoveItem(item.product.id, item.selectedWeight)}
-                        className="text-stone-400 hover:text-red-600 transition-colors p-1 cursor-pointer"
-                        title="Remove item"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    {/* Quantity Stepper & Item Total */}
-                    <div className="flex items-center justify-between pt-2">
-                      <div className="flex items-center border border-stone-300 rounded-md bg-white">
+                    <div className="flex items-center justify-between mt-2">
+                      <div className="flex items-center border border-[#4A2C1A]/20 bg-[#FAF8F5]">
                         <button
                           onClick={() =>
                             onUpdateQuantity(
@@ -194,11 +202,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                               item.quantity - 1
                             )
                           }
-                          className="px-2 py-0.5 text-stone-600 hover:bg-stone-100 text-xs font-bold cursor-pointer"
+                          className="px-2 py-0.5 text-xs text-[#4A2C1A] hover:bg-[#4A2C1A]/10 cursor-pointer"
                         >
                           -
                         </button>
-                        <span className="px-2 text-xs font-semibold text-stone-900 tabular-nums min-w-[1.5rem] text-center">
+                        <span className="px-2.5 text-xs font-medium text-[#4A2C1A]">
                           {item.quantity}
                         </span>
                         <button
@@ -209,88 +217,92 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                               item.quantity + 1
                             )
                           }
-                          className="px-2 py-0.5 text-stone-600 hover:bg-stone-100 text-xs font-bold cursor-pointer"
+                          className="px-2 py-0.5 text-xs text-[#4A2C1A] hover:bg-[#4A2C1A]/10 cursor-pointer"
                         >
                           +
                         </button>
                       </div>
 
-                      <span className="font-serif font-bold text-sm text-stone-900 tabular-nums">
-                        {formatPKR(item.selectedPrice * item.quantity)}
-                      </span>
+                      <button
+                        onClick={() => onRemoveItem(item.product.id, item.selectedWeight)}
+                        className="text-[#4A2C1A]/50 hover:text-red-800 transition-colors cursor-pointer"
+                        title="Remove preserve"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                 </div>
               ))
             )}
 
-            {/* Optional Customer Information Form for WhatsApp invoice */}
+            {/* Optional Patron Dispatch Details Form */}
             {items.length > 0 && (
               <div className="pt-2">
                 <button
                   onClick={() => setShowAddressForm(!showAddressForm)}
-                  className="w-full text-left py-2 px-3 text-xs font-semibold text-emerald-950 bg-stone-100 hover:bg-stone-200/80 rounded-lg flex items-center justify-between cursor-pointer"
+                  className="w-full text-left py-2 px-3 text-xs font-medium text-[#4A2C1A] bg-[#EDE7DD] hover:bg-[#E4DCCE] flex items-center justify-between cursor-pointer border border-[#4A2C1A]/10"
                 >
                   <span>
                     {showAddressForm
-                      ? '▼ Hide Delivery Address Details'
-                      : '▶ Add Delivery Address (Recommended)'}
+                      ? '− Hide Dispatch Details'
+                      : '+ Add Dispatch Details (Optional)'}
                   </span>
-                  <span className="text-[10px] text-stone-500 font-normal">
-                    {showAddressForm ? 'Will be included' : 'Click to add'}
+                  <span className="text-[11px] text-[#4A2C1A]/60">
+                    {showAddressForm ? 'Included' : 'Click to add'}
                   </span>
                 </button>
 
                 {showAddressForm && (
-                  <div className="mt-3 p-3.5 bg-stone-50 rounded-xl border border-stone-200 space-y-2.5 text-left text-xs">
+                  <div className="mt-3 p-4 bg-[#F5F1EB] border border-[#4A2C1A]/15 space-y-3 text-left text-xs">
                     <div>
-                      <label className="block text-stone-600 font-medium mb-1">
-                        Full Name:
+                      <label className="block text-[11px] uppercase tracking-wider text-[#4A2C1A]/70 mb-1">
+                        Patron Name:
                       </label>
                       <input
                         type="text"
-                        placeholder="e.g. Asad Khan"
+                        placeholder="e.g. Radhika Apte"
                         value={customer.name}
                         onChange={(e) => setCustomer({ ...customer, name: e.target.value })}
-                        className="w-full p-2 bg-white border border-stone-300 rounded-md focus:outline-none focus:border-amber-600"
+                        className="w-full p-2 bg-[#FAF8F5] border border-[#4A2C1A]/20 outline-none text-[#4A2C1A] text-xs"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-stone-600 font-medium mb-1">
-                          Phone Number:
+                        <label className="block text-[11px] uppercase tracking-wider text-[#4A2C1A]/70 mb-1">
+                          Phone / WhatsApp:
                         </label>
                         <input
                           type="tel"
-                          placeholder="0300-1234567"
+                          placeholder="9876543210"
                           value={customer.phone}
                           onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
-                          className="w-full p-2 bg-white border border-stone-300 rounded-md focus:outline-none focus:border-amber-600"
+                          className="w-full p-2 bg-[#FAF8F5] border border-[#4A2C1A]/20 outline-none text-[#4A2C1A] text-xs"
                         />
                       </div>
                       <div>
-                        <label className="block text-stone-600 font-medium mb-1">
+                        <label className="block text-[11px] uppercase tracking-wider text-[#4A2C1A]/70 mb-1">
                           City:
                         </label>
                         <input
                           type="text"
-                          placeholder="Lahore / Karachi"
+                          placeholder="Pune / Mumbai"
                           value={customer.city}
                           onChange={(e) => setCustomer({ ...customer, city: e.target.value })}
-                          className="w-full p-2 bg-white border border-stone-300 rounded-md focus:outline-none focus:border-amber-600"
+                          className="w-full p-2 bg-[#FAF8F5] border border-[#4A2C1A]/20 outline-none text-[#4A2C1A] text-xs"
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-stone-600 font-medium mb-1">
-                        Street Address:
+                      <label className="block text-[11px] uppercase tracking-wider text-[#4A2C1A]/70 mb-1">
+                        Delivery Address:
                       </label>
                       <input
                         type="text"
-                        placeholder="House / Street / Area"
+                        placeholder="Apartment / Street / Area"
                         value={customer.address}
                         onChange={(e) => setCustomer({ ...customer, address: e.target.value })}
-                        className="w-full p-2 bg-white border border-stone-300 rounded-md focus:outline-none focus:border-amber-600"
+                        className="w-full p-2 bg-[#FAF8F5] border border-[#4A2C1A]/20 outline-none text-[#4A2C1A] text-xs"
                       />
                     </div>
                   </div>
@@ -299,99 +311,50 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             )}
           </div>
 
-          {/* Footer with Calculations and WhatsApp Checkout CTA */}
+          {/* Footer Checkout Breakdown */}
           {items.length > 0 && (
-            <div className="p-4 sm:p-5 border-t border-[#0A0A0A]/10 bg-stone-50 space-y-3">
-              {/* Financial Breakdown */}
-              <div className="space-y-1.5 text-xs">
-                <div className="flex justify-between text-stone-600">
-                  <span>Subtotal:</span>
-                  <span className="font-semibold tabular-nums text-[#0A0A0A]">
-                    {formatPKR(subtotal)}
+            <div className="p-6 border-t border-[#4A2C1A]/10 bg-[#F5F1EB] space-y-4">
+              <div className="space-y-1.5 text-xs text-[#4A2C1A]/80">
+                <div className="flex justify-between">
+                  <span>Preserves Subtotal:</span>
+                  <span className="font-semibold text-[#4A2C1A]">Rs {subtotal.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Courier & Packaging:</span>
+                  <span className="font-semibold text-[#4A2C1A]">
+                    {isFreeShipping ? 'COMPLIMENTARY' : `Rs ${shippingFee}`}
                   </span>
                 </div>
-                <div className="flex justify-between text-stone-600">
-                  <span>Delivery Charges:</span>
-                  <span className="font-semibold tabular-nums">
-                    {isFreeShipping ? (
-                      <span className="text-[#0A0A0A] font-bold">FREE</span>
-                    ) : (
-                      formatPKR(shippingFee)
-                    )}
-                  </span>
-                </div>
-                <div className="flex justify-between text-base font-bold text-[#0A0A0A] pt-2 border-t border-stone-200">
-                  <span>Grand Total (COD):</span>
-                  <span className="font-serif text-xl text-[#0A0A0A] tabular-nums font-bold">
-                    {formatPKR(grandTotal)}
-                  </span>
+                <div className="flex justify-between text-sm font-serif pt-2 border-t border-[#4A2C1A]/10 text-[#4A2C1A]">
+                  <span>Total Payable:</span>
+                  <span className="font-semibold">Rs {grandTotal.toLocaleString()}</span>
                 </div>
               </div>
 
-              {/* EasyPaisa Payment Note */}
-              <div className="bg-white border border-[#D4AF37]/40 rounded-2xl p-2.5 text-[11px] text-[#0A0A0A] flex items-center justify-between">
-                <span>
-                  <strong>EasyPaisa:</strong> 0324-8314001
-                </span>
-                <span className="text-stone-500 font-semibold">Or Cash on Delivery</span>
-              </div>
-
-              {/* Order via WhatsApp Action Button (Luxury Gold & Black) */}
-              <a
-                href={whatsAppCheckoutUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => {
-                  if (onOrderPlaced) {
-                    const newOrder: OrderRecord = {
-                      id: `ord-${Date.now()}`,
-                      orderNumber: `TH-${Math.floor(1000 + Math.random() * 9000)}`,
-                      customerName: customer.name || 'WhatsApp Customer',
-                      customerPhone: customer.phone || '0300-XXXXXXX',
-                      city: customer.city || 'Pakistan',
-                      address: customer.address || 'Shared via WhatsApp chat',
-                      items: [...items],
-                      subtotal,
-                      shippingFee,
-                      total: grandTotal,
-                      status: 'pending',
-                      createdAt: new Date().toLocaleString(),
-                      notes: customer.notes,
-                    };
-                    onOrderPlaced(newOrder);
-                  }
-                }}
-                className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-[#D4AF37] hover:bg-[#F9E498] text-[#0A0A0A] text-sm font-bold rounded-full shadow-md transition-all border border-[#AA8010]"
-              >
-                <MessageCircle className="w-5 h-5 fill-[#0A0A0A] text-[#0A0A0A]" />
-                <span>Complete Order on WhatsApp</span>
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </a>
-
-              {/* Continue Shopping / Back to Shop Button */}
               <button
-                type="button"
-                onClick={onClose}
-                className="w-full py-2.5 bg-stone-100 hover:bg-stone-200 text-[#0A0A0A] font-semibold text-xs rounded-full flex items-center justify-center gap-1.5 border border-stone-300 transition-colors cursor-pointer"
+                onClick={handleCheckout}
+                disabled={orderSuccess}
+                className={`w-full py-3.5 text-xs uppercase tracking-wider font-medium flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  orderSuccess
+                    ? 'bg-emerald-800 text-white'
+                    : 'bg-[#4A2C1A] hover:bg-[#341d10] text-[#F5F1EB] shadow-sm hover:shadow-md'
+                }`}
               >
-                <ArrowLeft className="w-3.5 h-3.5 text-[#0A0A0A]" />
-                <span>← شاپنگ جاری رکھیں (Continue Shopping)</span>
+                {orderSuccess ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Order Transmitted to Atelier</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Complete Order via WhatsApp</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
-
-              <div className="flex items-center justify-between text-[11px] text-stone-500 pt-1">
-                <div className="flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#0A0A0A]" />
-                  <span>Cash on Delivery (COD)</span>
-                </div>
-                <button
-                  onClick={onClearCart}
-                  className="text-stone-400 hover:text-black underline cursor-pointer"
-                >
-                  Clear Cart
-                </button>
-              </div>
             </div>
           )}
+
         </div>
       </div>
     </div>

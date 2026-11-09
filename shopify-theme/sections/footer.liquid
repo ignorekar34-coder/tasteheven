@@ -1,0 +1,572 @@
+{%- comment -%}
+  Taste Heven - Modern Minimal Luxury Footer & Mobile Bottom Bar
+  File: sections/footer.liquid
+  OS 2.0 Production Ready
+{%- endcomment -%}
+
+{%- style -%}
+  .th-footer-{{ section.id }} {
+    background-color: {{ section.settings.bg_color | default: '#000000' }};
+    color: #e5e5e5;
+    padding: 70px 16px 100px;
+    border-top: 1px solid rgba(197, 168, 128, 0.25);
+    font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  @media (min-width: 768px) {
+    .th-footer-{{ section.id }} {
+      padding: 80px 24px 50px;
+    }
+  }
+
+  .th-footer-container {
+    max-width: 1240px;
+    margin: 0 auto;
+  }
+
+  .th-footer-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 40px;
+    margin-bottom: 50px;
+    text-align: left;
+  }
+
+  @media (min-width: 768px) {
+    .th-footer-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .th-footer-grid {
+      grid-template-columns: 1.5fr 1fr 1.2fr 1.3fr;
+      gap: 48px;
+    }
+  }
+
+  /* Col 1: Brand Info */
+  .th-footer-logo-title {
+    font-family: 'Cinzel', 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin: 0 0 6px;
+  }
+
+  .th-footer-tagline {
+    font-size: 11px;
+    color: {{ section.settings.accent_gold | default: '#C5A880' }};
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 16px;
+    font-weight: 600;
+  }
+
+  .th-footer-bio {
+    font-size: 13px;
+    line-height: 1.7;
+    color: #a3a3a3;
+    margin: 0 0 20px;
+  }
+
+  .th-footer-socials {
+    display: flex;
+    gap: 10px;
+  }
+
+  .th-social-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #141414;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .th-social-icon:hover {
+    background: {{ section.settings.accent_gold | default: '#C5A880' }};
+    color: #000000;
+    border-color: {{ section.settings.accent_gold | default: '#C5A880' }};
+    transform: translateY(-2px);
+  }
+
+  /* Columns 2 & 3: Menus */
+  .th-footer-heading {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 18px;
+    letter-spacing: 0.02em;
+  }
+
+  .th-footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .th-footer-links a {
+    color: #b0b0b0;
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.2s ease;
+    display: inline-block;
+  }
+
+  .th-footer-links a:hover {
+    color: {{ section.settings.accent_gold | default: '#C5A880' }};
+    transform: translateX(4px);
+  }
+
+  /* Column 4: Contact & Help */
+  .th-contact-box {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .th-contact-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    color: #cccccc;
+    line-height: 1.5;
+  }
+
+  .th-contact-row svg {
+    flex-shrink: 0;
+    color: {{ section.settings.accent_gold | default: '#C5A880' }};
+    margin-top: 3px;
+  }
+
+  .th-wa-footer-card {
+    background: #111111;
+    border: 1px solid rgba(197, 168, 128, 0.35);
+    border-radius: 16px;
+    padding: 14px;
+    margin-top: 8px;
+  }
+
+  .th-wa-footer-btn {
+    background: #25D366;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 12px;
+    text-decoration: none;
+    border-radius: 50px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+    transition: opacity 0.2s ease;
+  }
+
+  .th-wa-footer-btn:hover {
+    opacity: 0.9;
+  }
+
+  /* Bottom Copyright Bar */
+  .th-footer-bottom {
+    padding-top: 30px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #888888;
+    text-align: center;
+  }
+
+  @media (min-width: 768px) {
+    .th-footer-bottom {
+      flex-direction: row;
+      text-align: left;
+    }
+  }
+
+  .th-payment-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .th-pay-tag {
+    background: #141414;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #e0e0e0;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 9px;
+    border-radius: 6px;
+    letter-spacing: 0.04em;
+  }
+
+  /* Mobile Bottom Navigation Bar (Daraz Style) */
+  .th-mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #000000;
+    border-top: 1px solid rgba(197, 168, 128, 0.35);
+    z-index: 990;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
+  }
+
+  @media (min-width: 768px) {
+    .th-mobile-bottom-nav {
+      display: none;
+    }
+  }
+
+  .th-bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #b3b3b3;
+    font-size: 10px;
+    font-weight: 600;
+    gap: 3px;
+    position: relative;
+    padding: 4px 10px;
+    transition: color 0.2s ease;
+  }
+
+  .th-bottom-nav-item.active,
+  .th-bottom-nav-item:hover {
+    color: {{ section.settings.accent_gold | default: '#C5A880' }};
+  }
+
+  .th-bottom-cart-badge {
+    position: absolute;
+    top: 0px;
+    right: 8px;
+    background: {{ section.settings.accent_gold | default: '#C5A880' }};
+    color: #000000;
+    font-size: 9px;
+    font-weight: 800;
+    min-width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+{%- endstyle -%}
+
+<footer class="th-footer-{{ section.id }}" role="contentinfo">
+  <div class="th-footer-container">
+    <div class="th-footer-grid">
+      <!-- Col 1: Brand -->
+      <div>
+        <h3 class="th-footer-logo-title">{{ section.settings.brand_title | default: 'TASTE HEVEN' }}</h3>
+        <span class="th-footer-tagline">{{ section.settings.brand_tagline | default: 'FINE FOOD EXPERIENCE' }}</span>
+        <p class="th-footer-bio">
+          {{ section.settings.brand_about | default: 'Taste Heven revives artisanal pantry traditions. Handcrafted raw honey, sun-cured achars, and royal fruit murabbay delivered fresh across Pakistan.' }}
+        </p>
+
+        <div class="th-footer-socials">
+          <a href="{{ section.settings.social_instagram | default: '#' }}" class="th-social-icon" aria-label="Instagram" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+            </svg>
+          </a>
+          <a href="{{ section.settings.social_facebook | default: '#' }}" class="th-social-icon" aria-label="Facebook" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+            </svg>
+          </a>
+          {%- if section.settings.whatsapp_phone != blank -%}
+            <a href="https://wa.me/{{ section.settings.whatsapp_phone | remove: ' ' | remove: '+' | remove: '-' }}" class="th-social-icon" aria-label="WhatsApp" target="_blank" rel="noopener">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.414-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+              </svg>
+            </a>
+          {%- endif -%}
+        </div>
+      </div>
+
+      <!-- Col 2: Quick Links -->
+      <div>
+        <h4 class="th-footer-heading">{{ section.settings.col2_heading | default: 'Pantry Collections' }}</h4>
+        <ul class="th-footer-links">
+          {%- assign footer_menu = section.settings.footer_menu_1 | default: 'footer' -%}
+          {%- for link in linklists[footer_menu].links -%}
+            <li><a href="{{ link.url }}">{{ link.title }}</a></li>
+          {%- else -%}
+            <li><a href="/collections/pure-honey">Wild Sidr Honey (شہد)</a></li>
+            <li><a href="/collections/desi-achar">Chatpata Mango Achar</a></li>
+            <li><a href="/collections/murabba">Royal Seb Murabba</a></li>
+            <li><a href="/collections/murabba">Traditional Amla Murabba</a></li>
+            <li><a href="/collections/all">Complete Pantry Catalog</a></li>
+          {%- endfor -%}
+        </ul>
+      </div>
+
+      <!-- Col 3: Customer Care -->
+      <div>
+        <h4 class="th-footer-heading">{{ section.settings.col3_heading | default: 'Customer Care' }}</h4>
+        <ul class="th-footer-links">
+          <li><a href="/pages/contact">Contact Us / رابطہ کریں</a></li>
+          <li><a href="/pages/shipping-policy">Shipping & Nationwide COD</a></li>
+          <li><a href="/pages/return-policy">100% Khalis Return Guarantee</a></li>
+          <li><a href="/pages/faqs">Frequently Asked Questions</a></li>
+          <li><a href="/pages/about-us">Our Traditional Heritage</a></li>
+        </ul>
+      </div>
+
+      <!-- Col 4: Helpline & Order Assistance -->
+      <div>
+        <h4 class="th-footer-heading">{{ section.settings.col4_heading | default: 'Helpline & Delivery' }}</h4>
+        <div class="th-contact-box">
+          <div class="th-contact-row">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+            </svg>
+            <div>
+              <strong style="color: #fff; display: block;">WhatsApp Hotline</strong>
+              <span>{{ section.settings.display_phone | default: '+92 324 8314001 (10 AM - 10 PM)' }}</span>
+            </div>
+          </div>
+
+          <div class="th-contact-row">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="1" y="3" width="15" height="13"></rect>
+              <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+              <circle cx="5.5" cy="18.5" r="2.5"></circle>
+              <circle cx="18.5" cy="18.5" r="2.5"></circle>
+            </svg>
+            <div>
+              <strong style="color: #fff; display: block;">Delivery Timeline</strong>
+              <span>Karachi, Lahore, Islamabad: 2-3 Days<br>Other Cities: 3-4 Days</span>
+            </div>
+          </div>
+
+          <div class="th-wa-footer-card">
+            <span style="font-size: 11px; color: #a3a3a3; display: block;">Need assistance placing an order?</span>
+            <a
+              href="https://wa.me/{{ section.settings.whatsapp_phone | default: '923248314001' | remove: ' ' | remove: '+' | remove: '-' }}?text={{ 'Assalam-o-Alaikum Taste Heven! I need assistance with ordering.' | url_encode }}"
+              target="_blank"
+              rel="noopener"
+              class="th-wa-footer-btn"
+            >
+              <span>Direct WhatsApp Help</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Copyright -->
+    <div class="th-footer-bottom">
+      <div>
+        <p style="margin: 0;">
+          © {{ 'now' | date: '%Y' }} {{ section.settings.brand_title | default: 'TASTE HEVEN' }} ({{ section.settings.store_domain | default: 'tasteheven.store' }}). All Rights Reserved.
+        </p>
+      </div>
+
+      <div class="th-payment-pills">
+        <span class="th-pay-tag">Cash on Delivery (COD)</span>
+        <span class="th-pay-tag">EasyPaisa</span>
+        <span class="th-pay-tag">JazzCash</span>
+        <span class="th-pay-tag">Direct Bank Transfer</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Mobile Daraz-Style Bottom Navigation Bar -->
+{%- if section.settings.enable_mobile_bottom_nav -%}
+  <nav class="th-mobile-bottom-nav" aria-label="Quick Mobile Navigation">
+    <a href="{{ routes.root_url }}" class="th-bottom-nav-item active">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+      <span>Home</span>
+    </a>
+
+    <a href="{{ routes.all_products_collection_url }}" class="th-bottom-nav-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+        <line x1="8" y1="21" x2="16" y2="21"></line>
+        <line x1="12" y1="17" x2="12" y2="21"></line>
+      </svg>
+      <span>Shop</span>
+    </a>
+
+    {%- if section.settings.whatsapp_phone != blank -%}
+      <a
+        href="https://wa.me/{{ section.settings.whatsapp_phone | remove: ' ' | remove: '+' | remove: '-' }}"
+        target="_blank"
+        rel="noopener"
+        class="th-bottom-nav-item"
+        style="color: #25D366;"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.414-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+        </svg>
+        <span>WhatsApp</span>
+      </a>
+    {%- endif -%}
+
+    <a href="{{ routes.cart_url }}" class="th-bottom-nav-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <path d="M16 10a4 4 0 0 1-8 0"></path>
+      </svg>
+      <span>Cart</span>
+      <span class="th-bottom-cart-badge">{{ cart.item_count }}</span>
+    </a>
+  </nav>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Luxury Minimal Footer",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Brand Identity"
+    },
+    {
+      "type": "text",
+      "id": "brand_title",
+      "label": "Brand Title",
+      "default": "TASTE HEVEN"
+    },
+    {
+      "type": "text",
+      "id": "brand_tagline",
+      "label": "Brand Tagline",
+      "default": "FINE FOOD EXPERIENCE"
+    },
+    {
+      "type": "textarea",
+      "id": "brand_about",
+      "label": "About Description",
+      "default": "Taste Heven revives artisanal pantry traditions. Handcrafted raw honey, sun-cured achars, and royal fruit murabbay delivered fresh across Pakistan."
+    },
+    {
+      "type": "text",
+      "id": "store_domain",
+      "label": "Store Domain",
+      "default": "tasteheven.store"
+    },
+    {
+      "type": "header",
+      "content": "Helpline & Contact"
+    },
+    {
+      "type": "text",
+      "id": "display_phone",
+      "label": "Display Phone / Hotline",
+      "default": "+92 324 8314001 (10 AM - 10 PM)"
+    },
+    {
+      "type": "text",
+      "id": "whatsapp_phone",
+      "label": "WhatsApp Number (e.g. 923248314001)",
+      "default": "923248314001"
+    },
+    {
+      "type": "header",
+      "content": "Navigation Menus"
+    },
+    {
+      "type": "text",
+      "id": "col2_heading",
+      "label": "Column 2 Heading",
+      "default": "Pantry Collections"
+    },
+    {
+      "type": "link_list",
+      "id": "footer_menu_1",
+      "label": "Column 2 Menu",
+      "default": "footer"
+    },
+    {
+      "type": "text",
+      "id": "col3_heading",
+      "label": "Column 3 Heading",
+      "default": "Customer Care"
+    },
+    {
+      "type": "text",
+      "id": "col4_heading",
+      "label": "Column 4 Heading",
+      "default": "Helpline & Delivery"
+    },
+    {
+      "type": "header",
+      "content": "Social Links"
+    },
+    {
+      "type": "url",
+      "id": "social_instagram",
+      "label": "Instagram URL"
+    },
+    {
+      "type": "url",
+      "id": "social_facebook",
+      "label": "Facebook URL"
+    },
+    {
+      "type": "header",
+      "content": "Mobile Bottom Navigation (Daraz Style)"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_mobile_bottom_nav",
+      "label": "Enable Mobile Bottom Navigation Bar",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Color Styling"
+    },
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Footer Background Color",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "accent_gold",
+      "label": "Accent Gold",
+      "default": "#C5A880"
+    }
+  ]
+}
+{% endschema %}

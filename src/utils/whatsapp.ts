@@ -9,9 +9,12 @@ export interface OrderCustomerInfo {
   notes?: string;
 }
 
-export function formatPKR(amount: number): string {
-  return `₨ ${amount.toLocaleString('en-PK')}`;
+export function formatPrice(amount: number): string {
+  return `Rs ${amount.toLocaleString('en-IN')}`;
 }
+
+// Keep formatPKR as an alias so existing references don't break
+export const formatPKR = formatPrice;
 
 /**
  * Creates WhatsApp URL for a complete Cart order with customer info
@@ -25,35 +28,33 @@ export function generateCartWhatsAppUrl(
   const grandTotal = subtotal + shippingFee;
   const isFreeDelivery = shippingFee === 0;
 
-  let msg = `🌶️🍯 *${STORE_NAME} - New Order Request* ✨\n\n`;
-  msg += `Assalam-o-Alaikum! I want to order the following items from ${STORE_NAME}:\n\n`;
+  let msg = `✨ *${STORE_NAME} — Artisanal Preserves Order* 🏺\n\n`;
+  msg += `Hello! I would like to place an order from Meraki Pantry:\n\n`;
   msg += `*📋 Order Items:*\n`;
 
   items.forEach((item, index) => {
     const itemTotal = item.selectedPrice * item.quantity;
     msg += `${index + 1}. *${item.product.name}* (${item.selectedWeight})\n`;
-    msg += `   Qty: ${item.quantity} × ${formatPKR(item.selectedPrice)} = *${formatPKR(itemTotal)}*\n`;
+    msg += `   Qty: ${item.quantity} × ${formatPrice(item.selectedPrice)} = *${formatPrice(itemTotal)}*\n`;
   });
 
-  msg += `\n*💰 Payment Summary:*`;
-  msg += `\n• Subtotal: ${formatPKR(subtotal)}`;
-  msg += `\n• Delivery Charges: ${isFreeDelivery ? 'FREE (Special Offer 🎉)' : formatPKR(shippingFee)}`;
-  msg += `\n• *Grand Total (Cash on Delivery): ${formatPKR(grandTotal)}*\n`;
+  msg += `\n*💰 Summary:*`;
+  msg += `\n• Subtotal: ${formatPrice(subtotal)}`;
+  msg += `\n• Delivery: ${isFreeDelivery ? 'FREE (Pune Local / Special Order)' : formatPrice(shippingFee)}`;
+  msg += `\n• *Grand Total: ${formatPrice(grandTotal)}*\n`;
 
   if (customer && customer.name) {
-    msg += `\n*📦 Delivery Details:*`;
-    msg += `\n• Customer Name: ${customer.name}`;
+    msg += `\n*📦 Delivery Address:*`;
+    msg += `\n• Name: ${customer.name}`;
     msg += `\n• Phone: ${customer.phone || 'Provided via WhatsApp'}`;
-    msg += `\n• City: ${customer.city || 'Pakistan'}`;
-    msg += `\n• Address: ${customer.address || 'To be shared'}`;
+    msg += `\n• City: ${customer.city || 'Pune / India'}`;
+    msg += `\n• Address: ${customer.address || 'To be confirmed'}`;
     if (customer.notes) {
-      msg += `\n• Special Note: ${customer.notes}`;
+      msg += `\n• Note: ${customer.notes}`;
     }
   } else {
-    msg += `\n_Please confirm availability and dispatch date._`;
+    msg += `\nPlease confirm dispatch date and payment details. Thank you!`;
   }
-
-  msg += `\n\nShukriya! Looking forward to your prompt response.`;
 
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
 }
@@ -68,21 +69,24 @@ export function generateSingleProductWhatsAppUrl(
   quantity = 1
 ): string {
   const total = price * quantity;
-  let msg = `🌶️🍯 *${STORE_NAME} - Quick Order* ✨\n\n`;
-  msg += `Assalam-o-Alaikum! I want to order this product directly:\n\n`;
-  msg += `*Product:* ${product.name} (${product.urduName})\n`;
-  msg += `*Selected Size:* ${weight}\n`;
+  let msg = `✨ *${STORE_NAME} — Quick Order* 🏺\n\n`;
+  msg += `Hello! I would like to order:\n\n`;
+  msg += `*Product:* ${product.name}\n`;
+  msg += `*Size:* ${weight}\n`;
   msg += `*Quantity:* ${quantity}\n`;
-  msg += `*Price:* ${formatPKR(price)} each (Total: *${formatPKR(total)}*)\n\n`;
-  msg += `Please send me the delivery details and total with Cash on Delivery to my city.\nShukriya!`;
+  msg += `*Price:* ${formatPrice(price)} (Total: *${formatPrice(total)}*)\n\n`;
+  msg += `Please confirm availability and dispatch timeline. Thank you!`;
 
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
 }
 
-/**
- * General chat with customer care on WhatsApp
- */
+export function generateArtisanPicklesWhatsAppUrl(jarName?: string): string {
+  let msg = `✨ *${STORE_NAME} — Preserves Inquiry* 🏺\n\n`;
+  msg += `Hello! I'm interested in Meraki Pantry handcrafted preserves (${jarName || 'Mango Pickle & Apple Murabba'}). Could you share batch availability?`;
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+}
+
 export function generateGeneralInquiryWhatsAppUrl(topic = 'General Inquiry'): string {
-  const msg = `Assalam-o-Alaikum Taste Heven team! I have a question regarding ${topic}. Could you please guide me?`;
+  const msg = `Hello Meraki Pantry team! I have a question regarding ${topic}. Could you please guide me?`;
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
 }
