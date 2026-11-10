@@ -28,7 +28,12 @@ import {
   CheckCircle2,
   Clock,
   ExternalLink,
+  Cloud,
+  RefreshCw,
+  Wifi,
 } from 'lucide-react';
+import { collection, doc, setDoc, onSnapshot, deleteDoc } from 'firebase/firestore';
+import { db, handleFirestoreError, OperationType, testConnection } from './firebase';
 import { processImageFile } from './utils/imageUtils';
 import defaultMangoImg from './assets/images/mango_achar_lahore_jar_1794203977577.jpg';
 import defaultGarlicImg from './assets/images/garlic_achar_lahore_jar_1794203978491.jpg';
@@ -337,6 +342,10 @@ export default function App() {
     description: '',
   });
 
+  // Cloud sync status state
+  const [isCloudSynced, setIsCloudSynced] = useState<boolean>(true);
+  const [isSyncingAll, setIsSyncingAll] = useState<boolean>(false);
+
   // Toast feedback state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -347,7 +356,7 @@ export default function App() {
     }, 2800);
   };
 
-  // Preload primary images on mount
+  // Preload primary images on mount & check URL params
   useEffect(() => {
     const urls = [
       DEFAULT_MANGO_IMG,
@@ -367,7 +376,96 @@ export default function App() {
     }
   }, []);
 
-  // Persist products to localStorage
+  // Connect to Firestore on Boot and attach real-time live listeners for all visitors
+  useEffect(() => {
+    // 1. Connection check
+    testConnection().then((connected) => {
+      setIsCloudSynced(connected);
+    });
+
+    // 2. Real-time products listener: when admin changes a picture, EVERY user sees it live!
+    const unsubscribeProducts = onSnapshot(
+      collection(db, 'products'),
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const cloudProducts: ProductItem[] = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data() as ProductItem;
+            cloudProducts.push({
+              ...data,
+              id: docSnap.id,
+              image: getSafeProductImage(docSnap.id, data.image),
+            });
+          });
+          setProducts(cloudProducts);
+          try {
+            localStorage.setItem('taste_heven_achar_products_v9', JSON.stringify(cloudProducts));
+          } catch {}
+          setIsCloudSynced(true);
+        } else {
+          // If Firestore is empty on initial boot, seed initial products to cloud
+          INITIAL_PRODUCTS.forEach(async (initProd) => {
+            try {
+              await setDoc(doc(db, 'products', initProd.id), initProd);
+            } catch (err) {
+              console.warn('Seeding initial product error:', err);
+            }
+          });
+        }
+      },
+      (error) => {
+        console.warn('Firestore products onSnapshot error:', error);
+        setIsCloudSynced(false);
+      }
+    );
+
+    // 3. Real-time Hero image listener: changes live for all visitors immediately
+    const unsubscribeHero = onSnapshot(
+      doc(db, 'settings', 'hero'),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data && data.image) {
+            setHeroImage(data.image);
+            try {
+              localStorage.setItem('taste_heven_hero_jar_v9', data.image);
+            } catch {}
+          }
+        }
+      },
+      (error) => {
+        console.warn('Firestore hero onSnapshot error:', error);
+      }
+    );
+
+    // 4. Real-time Orders listener for admin management
+    const unsubscribeOrders = onSnapshot(
+      collection(db, 'orders'),
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const ords: OrderRecord[] = [];
+          snapshot.forEach((d) => {
+            ords.push({ ...d.data(), id: d.id } as OrderRecord);
+          });
+          setReceivedOrders(ords);
+          try {
+            localStorage.setItem('taste_heven_orders_v9', JSON.stringify(ords));
+          } catch {}
+        }
+      },
+      (error) => {
+        console.warn('Firestore orders onSnapshot error:', error);
+      }
+    );
+
+    return () => {
+      unsubscribeProducts();
+      unsubscribeHero();
+      unsubscribeOrders();
+    };
+  }, []);
+
+  // Persist products to localStorage as offline fallback
   useEffect(() => {
     try {
       localStorage.setItem('taste_heven_achar_products_v9', JSON.stringify(products));
@@ -445,29 +543,77 @@ export default function App() {
     showToast(`ایڈمن پاسورڈ کامیابی سے اپڈیٹ ہو گیا: ${newPasswordInput.trim()}`);
   };
 
-  // Handle direct file upload for any product
+  // Save single product to Cloud Firestore live
+  const saveProductToCloud = async (prod: ProductItem) => {
+    try {
+      await setDoc(doc(db, 'products', prod.id), prod);
+      setIsCloudSynced(true);
+      showToast(`✓ ${prod.name} کلاؤڈ پر لائیو ہو گیا اور تمام گاہکوں کو فوراً نظر آئے گا!`);
+    } catch (err) {
+      console.error('Firestore save error:', err);
+      handleFirestoreError(err, OperationType.WRITE, `products/${prod.id}`);
+    }
+  };
+
+  // Handle direct file upload for any product & instantly broadcast to all users
   const handleFileUpload = async (productId: string, file: File) => {
     if (!file) return;
     try {
       const newImgData = await processImageFile(file, 800, 800, 0.82);
+      
+      let updatedProd: ProductItem | null = null;
       setProducts((prev) =>
-        prev.map((p) => (p.id === productId ? { ...p, image: newImgData } : p))
+        prev.map((p) => {
+          if (p.id === productId) {
+            updatedProd = { ...p, image: newImgData };
+            return updatedProd;
+          }
+          return p;
+        })
       );
+
       if (productId === 'mango-achar') {
         setHeroImage(newImgData);
         try {
           localStorage.setItem('taste_heven_hero_jar_v9', newImgData);
         } catch {}
+        try {
+          await setDoc(doc(db, 'settings', 'hero'), {
+            image: newImgData,
+            updatedAt: new Date().toISOString(),
+          });
+        } catch (e) {
+          console.warn('Hero settings sync error:', e);
+        }
       }
-      showToast('تصویر فوری اپلوڈ ہو گئی (Photo Updated Live)');
+
+      // Sync to Firestore immediately so all visitors see it live!
+      if (updatedProd) {
+        await setDoc(doc(db, 'products', productId), updatedProd);
+      } else {
+        const existing = products.find((p) => p.id === productId);
+        if (existing) {
+          await setDoc(doc(db, 'products', productId), { ...existing, image: newImgData });
+        }
+      }
+
+      setIsCloudSynced(true);
+      showToast('تصویر فوری کلاؤڈ پر محفوظ ہو گئی اور تمام صارفین کو لائیو نظر آنا شروع ہو گئی! (Updated Live for Everyone)');
     } catch (err) {
       console.warn('Image processing fallback:', err);
       const reader = new FileReader();
-      reader.onload = () => {
+      reader.onload = async () => {
         if (typeof reader.result === 'string') {
+          const res = reader.result as string;
           setProducts((prev) =>
-            prev.map((p) => (p.id === productId ? { ...p, image: reader.result as string } : p))
+            prev.map((p) => (p.id === productId ? { ...p, image: res } : p))
           );
+          try {
+            const existing = products.find((p) => p.id === productId);
+            if (existing) {
+              await setDoc(doc(db, 'products', productId), { ...existing, image: res });
+            }
+          } catch {}
         }
       };
       reader.readAsDataURL(file);
@@ -491,17 +637,55 @@ export default function App() {
     }
   };
 
-  // Explicit Save Hero Image Functionality
-  const handleSaveHeroImage = () => {
+  // Explicit Save Hero Image Functionality & sync to Firestore live
+  const handleSaveHeroImage = async () => {
     if (!heroImageDraft) return;
-    setHeroImage(heroImageDraft);
+    const imgData = heroImageDraft;
+    setHeroImage(imgData);
     try {
-      localStorage.setItem('taste_heven_hero_jar_v9', heroImageDraft);
+      localStorage.setItem('taste_heven_hero_jar_v9', imgData);
     } catch (e) {
       console.warn('Hero image save error:', e);
     }
     setHeroImageDraft(null);
-    showToast('ہیرو جار کی تصویر کامیابی سے محفوظ ہو گئی اور ویب سائٹ پر لائیو تبدیل ہو گئی!');
+
+    // Save to Firestore so EVERYONE sees the new hero image live
+    try {
+      await setDoc(doc(db, 'settings', 'hero'), {
+        image: imgData,
+        updatedAt: new Date().toISOString(),
+      });
+      setIsCloudSynced(true);
+      showToast('ہیرو جار تصویر لائیو کلاؤڈ پر محفوظ ہو گئی اور تمام ڈیوائسز پر فوری تبدیل ہو گئی! (Hero Jar Live on All Devices)');
+    } catch (err) {
+      console.error('Firestore hero save error:', err);
+      showToast('تصویر لوکل محفوظ ہو گئی، کلاؤڈ سنک کی دوبارہ کوشش کریں۔');
+    }
+  };
+
+  // Global sync function: Pushes all products and hero image to cloud
+  const handleSyncAllToCloud = async () => {
+    setIsSyncingAll(true);
+    try {
+      for (const prod of products) {
+        await setDoc(doc(db, 'products', prod.id), prod);
+      }
+      await setDoc(doc(db, 'settings', 'hero'), {
+        image: heroImage,
+        updatedAt: new Date().toISOString(),
+      });
+      await setDoc(doc(db, 'settings', 'categories'), {
+        list: categories,
+        updatedAt: new Date().toISOString(),
+      });
+      setIsCloudSynced(true);
+      showToast('تمام تصاویر اور پروڈکٹس کلاؤڈ پر لائیو سنک ہو گئیں! اب ہر گاہک اور ہر ڈیوائس کو فوراً نظر آئیں گی۔');
+    } catch (err) {
+      console.error('Sync all error:', err);
+      showToast('کلاؤڈ سنک میں خرابی، براہ کرم انٹرنیٹ کنکشن چیک کریں۔');
+    } finally {
+      setIsSyncingAll(false);
+    }
   };
 
   // Add New Category Functionality
@@ -692,9 +876,15 @@ export default function App() {
       createdAt: new Date().toLocaleString('en-PK', { timeZone: 'Asia/Karachi' }),
     };
 
-    setTimeout(() => {
-      // Save order
+    setTimeout(async () => {
+      // Save order locally and in Firestore
       setReceivedOrders((prev) => [newOrder, ...prev]);
+
+      try {
+        await setDoc(doc(db, 'orders', orderId), newOrder);
+      } catch (err) {
+        console.warn('Firestore order sync error:', err);
+      }
 
       // If checkout was from full cart, clear cart
       if (!checkoutDirectItem) {
@@ -954,6 +1144,33 @@ export default function App() {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                  {/* Live Cloud Status Badge */}
+                  <div
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${
+                      isCloudSynced
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                        : 'bg-amber-50 text-amber-800 border-amber-200'
+                    }`}
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        isCloudSynced ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+                      }`}
+                    />
+                    <span>{isCloudSynced ? 'کلاؤڈ لائیو کنیکٹڈ (Cloud Live)' : 'لوکل موڈ (Offline)'}</span>
+                  </div>
+
+                  {/* Sync All Live to Cloud Button */}
+                  <button
+                    onClick={handleSyncAllToCloud}
+                    disabled={isSyncingAll}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                    title="تمام تصویریں اور پروڈکٹس کلاؤڈ پر لائیو سنک کریں تاکہ ہر صارف کو فوری نظر آئیں"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 text-amber-300 ${isSyncingAll ? 'animate-spin' : ''}`} />
+                    <span>{isSyncingAll ? 'سنک ہو رہا ہے...' : 'سب کلاؤڈ پر لائیو سنک کریں'}</span>
+                  </button>
+
                   {/* Add Product Button */}
                   <button
                     onClick={() => setIsAddingProduct(!isAddingProduct)}
@@ -1377,6 +1594,12 @@ export default function App() {
                           description: newProductForm.description || 'Ghar jaisa khaalis achar.',
                         };
                         setProducts([...products, created]);
+                        // Instantly write to Firestore so every user sees the new product live
+                        try {
+                          setDoc(doc(db, 'products', created.id), created);
+                        } catch (err) {
+                          console.warn('Firestore new product write error:', err);
+                        }
                         setIsAddingProduct(false);
                         setNewProductForm({
                           name: '',
@@ -1389,7 +1612,7 @@ export default function App() {
                           image: DEFAULT_MANGO_IMG,
                           description: '',
                         });
-                        showToast('نیا پروڈکٹ تمام وزن اور قیمتوں کے ساتھ شامل ہو گیا!');
+                        showToast('نیا پروڈکٹ تمام وزن اور قیمتوں کے ساتھ لائیو کلاؤڈ پر شامل ہو گیا!');
                       }}
                       className="px-6 py-2.5 bg-black text-white text-xs font-bold rounded-full hover:bg-neutral-800 transition-colors cursor-pointer"
                     >
@@ -1443,19 +1666,31 @@ export default function App() {
                         </div>
 
                         {/* Quick Button to Change Picture */}
-                        <label className="w-full mb-3 inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-semibold rounded-xl cursor-pointer transition-colors border border-neutral-200">
-                          <Upload className="w-3.5 h-3.5 text-black" />
-                          <span>تصویر بدلیں (Change Photo)</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) handleFileUpload(prod.id, file);
-                            }}
-                          />
-                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                          <label className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-semibold rounded-xl cursor-pointer transition-colors border border-neutral-200">
+                            <Upload className="w-3.5 h-3.5 text-black" />
+                            <span>تصویر بدلیں</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleFileUpload(prod.id, file);
+                              }}
+                            />
+                          </label>
+
+                          <button
+                            type="button"
+                            onClick={() => saveProductToCloud(prod)}
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl cursor-pointer shadow-xs transition-colors"
+                            title="Publish this product and its photo live to everyone immediately"
+                          >
+                            <Cloud className="w-3.5 h-3.5" />
+                            <span>لائیو محفوظ کریں</span>
+                          </button>
+                        </div>
 
                         {/* Editable Product Details */}
                         <div className="space-y-3 text-left">
@@ -1616,18 +1851,26 @@ export default function App() {
 
                       {/* Actions */}
                       <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between">
-                        <span className="text-[11px] text-emerald-700 font-semibold">
-                          ✓ آٹو محفوظ (Auto-Saved)
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="text-[11px] text-emerald-700 font-semibold">
+                            لائیو کلاؤڈ سنکڈ (Live Synced)
+                          </span>
+                        </div>
                         {products.length > 1 && (
                           <button
-                            onClick={() => {
+                            onClick={async () => {
                               if (confirm(`${prod.name} کو واقعی حذف کرنا چاہتے ہیں؟`)) {
                                 setProducts((prev) => prev.filter((p) => p.id !== prod.id));
+                                try {
+                                  await deleteDoc(doc(db, 'products', prod.id));
+                                } catch (e) {
+                                  console.warn('Firestore delete error:', e);
+                                }
                                 showToast('پروڈکٹ ہٹا دیا گیا');
                               }
                             }}
-                            className="text-red-500 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                            className="text-red-500 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
                             title="Delete product"
                           >
                             <Trash2 className="w-4 h-4" />
