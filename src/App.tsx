@@ -31,6 +31,9 @@ import {
   Cloud,
   RefreshCw,
   Wifi,
+  Printer,
+  Package,
+  PhoneCall,
 } from 'lucide-react';
 import { collection, doc, setDoc, onSnapshot, deleteDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType, testConnection } from './firebase';
@@ -122,8 +125,9 @@ export interface OrderRecord {
   deliveryFee: number;
   total: number;
   paymentMethod: string;
-  status: 'Pending' | 'Confirmed' | 'Delivered';
+  status: 'Pending' | 'Confirmed' | 'Delivered' | 'Cancelled';
   createdAt: string;
+  timestamp?: number;
 }
 
 export function getPriceForWeight(product: ProductItem, weight: WeightVariant): number {
@@ -322,6 +326,7 @@ export default function App() {
 
   // Admin active tab: 'products' | 'orders'
   const [adminTab, setAdminTab] = useState<'products' | 'orders'>('products');
+  const [orderStatusFilter, setOrderStatusFilter] = useState<'All' | 'Pending' | 'Confirmed' | 'Delivered'>('All');
 
   // New category creation form
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -447,6 +452,7 @@ export default function App() {
           snapshot.forEach((d) => {
             ords.push({ ...d.data(), id: d.id } as OrderRecord);
           });
+          ords.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
           setReceivedOrders(ords);
           try {
             localStorage.setItem('taste_heven_orders_v9', JSON.stringify(ords));
@@ -874,6 +880,7 @@ export default function App() {
       paymentMethod: 'Cash on Delivery (COD)',
       status: 'Pending',
       createdAt: new Date().toLocaleString('en-PK', { timeZone: 'Asia/Karachi' }),
+      timestamp: Date.now(),
     };
 
     setTimeout(async () => {
@@ -896,6 +903,34 @@ export default function App() {
       setOrderSuccessRecord(newOrder);
       showToast(`آرڈر نمبر ${orderId} کامیابی سے بک ہو گیا!`);
     }, 600);
+  };
+
+  // Update Order Status in Firestore & local state
+  const handleUpdateOrderStatus = async (
+    orderId: string,
+    newStatus: 'Pending' | 'Confirmed' | 'Delivered' | 'Cancelled'
+  ) => {
+    setReceivedOrders((prev) =>
+      prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+    );
+    try {
+      await setDoc(doc(db, 'orders', orderId), { status: newStatus }, { merge: true });
+      showToast(`آرڈر اسٹیٹس تبدیل ہو گیا: ${newStatus}`);
+    } catch (err) {
+      console.warn('Firestore update order status error:', err);
+    }
+  };
+
+  // Delete Order from Firestore & local state
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm(`کیا آپ واقعی آرڈر #${orderId} سسٹم سے ڈیلیٹ کرنا چاہتے ہیں؟`)) return;
+    setReceivedOrders((prev) => prev.filter((o) => o.id !== orderId));
+    try {
+      await deleteDoc(doc(db, 'orders', orderId));
+      showToast(`آرڈر #${orderId} کامیابی سے ڈیلیٹ کر دیا گیا`);
+    } catch (err) {
+      console.warn('Firestore delete order error:', err);
+    }
   };
 
   // WhatsApp Order Confirmation String
@@ -928,6 +963,12 @@ export default function App() {
     activeCategory === 'all'
       ? products
       : products.filter((p) => p.category === activeCategory);
+
+  // Filtered orders list based on status filter
+  const filteredReceivedOrders =
+    orderStatusFilter === 'All'
+      ? receivedOrders
+      : receivedOrders.filter((o) => o.status === orderStatusFilter);
 
   // ==========================================
   // VIEW 1: ADMIN PORTAL
@@ -999,76 +1040,161 @@ export default function App() {
                 <div>
                   <h1 className="text-xl sm:text-2xl font-extrabold text-black flex items-center gap-2">
                     <FileText className="w-6 h-6 text-black" />
-                    <span>گاہکوں کے موصولہ آرڈرز (Customer Orders)</span>
+                    <span>گاہکوں کے موصولہ ویب آرڈرز (Web Orders)</span>
                   </h1>
                   <p className="text-xs sm:text-sm text-neutral-600 mt-1">
-                    ویب سائٹ سے کسٹمرز کے بک کیے گئے آرڈرز، فون نمبر، ای میل اور پتے کی تفصیلات۔
+                    یہ آرڈرز ویب سائٹ سے براہ راست موصول ہو رہے ہیں۔ کسی واٹس ایپ کی ضرورت نہیں، تمام تفصیلات یہاں محفوظ ہیں۔
                   </p>
                 </div>
-                <div className="text-right">
-                  <span className="text-xs text-neutral-500 font-semibold block">کل آرڈرز</span>
-                  <span className="text-2xl font-black text-black">{receivedOrders.length}</span>
+                <div className="flex items-center gap-4 text-right">
+                  <div>
+                    <span className="text-[10px] text-neutral-400 uppercase font-bold block">زیرِ التواء</span>
+                    <span className="text-xl font-black text-amber-600">
+                      {receivedOrders.filter((o) => o.status === 'Pending').length}
+                    </span>
+                  </div>
+                  <div className="pl-4 border-l border-neutral-200">
+                    <span className="text-[10px] text-neutral-400 uppercase font-bold block">کل آرڈرز</span>
+                    <span className="text-xl font-black text-black">{receivedOrders.length}</span>
+                  </div>
                 </div>
               </div>
 
-              {receivedOrders.length === 0 ? (
+              {/* Order Status Filters */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                {(['All', 'Pending', 'Confirmed', 'Delivered'] as const).map((st) => {
+                  const count =
+                    st === 'All'
+                      ? receivedOrders.length
+                      : receivedOrders.filter((o) => o.status === st).length;
+                  return (
+                    <button
+                      key={st}
+                      onClick={() => setOrderStatusFilter(st)}
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                        orderStatusFilter === st
+                          ? 'bg-black text-white shadow-xs'
+                          : 'bg-white text-neutral-700 hover:bg-neutral-100 border border-neutral-200'
+                      }`}
+                    >
+                      <span>
+                        {st === 'All'
+                          ? 'سبھی آرڈرز'
+                          : st === 'Pending'
+                          ? 'زیرِ التواء (Pending)'
+                          : st === 'Confirmed'
+                          ? 'کنفرم شدہ (Confirmed)'
+                          : 'ڈیلیور شدہ (Delivered)'}
+                      </span>
+                      <span
+                        className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                          orderStatusFilter === st
+                            ? 'bg-white/20 text-white'
+                            : 'bg-neutral-100 text-neutral-800'
+                        }`}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {filteredReceivedOrders.length === 0 ? (
                 <div className="bg-white rounded-2xl p-12 text-center border border-neutral-200">
                   <ShoppingBag className="w-12 h-12 text-neutral-300 mx-auto mb-3" />
-                  <h3 className="text-base font-bold text-neutral-800">ابھی تک کوئی نیا آرڈر موصول نہیں ہوا</h3>
+                  <h3 className="text-base font-bold text-neutral-800">
+                    {orderStatusFilter === 'All'
+                      ? 'ابھی تک کوئی نیا آرڈر موصول نہیں ہوا'
+                      : `اس کیٹیگری میں کوئی آرڈر موجود نہیں`}
+                  </h3>
                   <p className="text-xs text-neutral-500 mt-1">
-                    جیسے ہی کوئی گاہک آرڈر کرے گا، اس کی تمام تفصیلات خودکار طور پر یہاں محفوظ ہو جائیں گی۔
+                    جیسے ہی کوئی گاہک ویب سائٹ سے آرڈر بک کرے گا، اس کا آرڈر فوری طور پر یہاں لائیو نظر آنا شروع ہو جائے گا۔
                   </p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {receivedOrders.map((ord) => (
+                  {filteredReceivedOrders.map((ord) => (
                     <div
                       key={ord.id}
                       className="bg-white rounded-2xl p-5 border border-neutral-200 shadow-xs hover:border-neutral-300 transition-all"
                     >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-neutral-100">
-                        <div className="flex items-center gap-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-100">
+                        <div className="flex items-center gap-2.5 flex-wrap">
                           <span className="text-sm font-black font-mono bg-neutral-100 px-2.5 py-1 rounded-md text-black">
-                            {ord.id}
+                            #{ord.id}
                           </span>
                           <span
-                            className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
+                            className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
                               ord.status === 'Delivered'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : 'bg-amber-100 text-amber-800'
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                : ord.status === 'Confirmed'
+                                ? 'bg-blue-50 text-blue-800 border-blue-200'
+                                : ord.status === 'Cancelled'
+                                ? 'bg-red-50 text-red-800 border-red-200'
+                                : 'bg-amber-50 text-amber-800 border-amber-200'
                             }`}
                           >
-                            {ord.status === 'Delivered' ? 'ڈیلیور ہو چکا (Delivered)' : 'زیرِ التواء (Pending COD)'}
+                            {ord.status === 'Delivered'
+                              ? 'ڈیلیور ہو چکا (Delivered)'
+                              : ord.status === 'Confirmed'
+                              ? 'کنفرم شدہ (Confirmed)'
+                              : ord.status === 'Cancelled'
+                              ? 'منسوخ شدہ (Cancelled)'
+                              : 'زیرِ التواء (Pending COD)'}
                           </span>
                           <span className="text-xs text-neutral-400 flex items-center gap-1">
                             <Clock className="w-3 h-3" /> {ord.createdAt}
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <a
-                            href={`https://wa.me/${ord.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                              `As-salamu Alaikum ${ord.customerName}, TASTE HEVEN Lahore se apke order ${ord.id} ke hawale se rabta kar rahe hain.`
-                            )}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-bold rounded-full transition-colors"
+                        {/* Order Management Actions */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* Status Selector Dropdown */}
+                          <select
+                            value={ord.status}
+                            onChange={(e) =>
+                              handleUpdateOrderStatus(ord.id, e.target.value as any)
+                            }
+                            className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-neutral-300 bg-white hover:border-black focus:outline-none"
+                            title="Change Order Status"
                           >
-                            <MessageCircle className="w-3.5 h-3.5" />
-                            <span>کسٹمر سے واٹس ایپ رابطہ</span>
-                          </a>
+                            <option value="Pending">زیرِ التواء (Pending)</option>
+                            <option value="Confirmed">کنفرم شدہ (Confirmed)</option>
+                            <option value="Delivered">ڈیلیور ہو چکا (Delivered)</option>
+                            <option value="Cancelled">منسوخ (Cancelled)</option>
+                          </select>
 
+                          {/* Print Parcel Slip */}
                           <button
                             onClick={() => {
-                              const newStatus = ord.status === 'Pending' ? 'Delivered' : 'Pending';
-                              setReceivedOrders((prev) =>
-                                prev.map((o) => (o.id === ord.id ? { ...o, status: newStatus } : o))
-                              );
-                              showToast(`آرڈر اسٹیٹس تبدیل ہو گیا: ${newStatus}`);
+                              setOrderSuccessRecord(ord);
+                              setTimeout(() => window.print(), 150);
                             }}
-                            className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-semibold rounded-full transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-semibold rounded-full transition-colors cursor-pointer"
+                            title="Print Customer Packing Slip"
                           >
-                            اسٹیٹس بدلیں
+                            <Printer className="w-3.5 h-3.5 text-neutral-600" />
+                            <span>پرنٹ سلپ</span>
+                          </button>
+
+                          {/* Call Customer Directly */}
+                          <a
+                            href={`tel:${ord.phone}`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-black hover:bg-neutral-800 text-white text-xs font-semibold rounded-full transition-colors"
+                            title="Call customer directly"
+                          >
+                            <PhoneCall className="w-3.5 h-3.5" />
+                            <span>کال</span>
+                          </a>
+
+                          {/* Delete Order */}
+                          <button
+                            onClick={() => handleDeleteOrder(ord.id)}
+                            className="p-1.5 text-neutral-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                            title="Delete this order"
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
@@ -1076,11 +1202,18 @@ export default function App() {
                       {/* Customer Info Grid */}
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-3 text-xs">
                         <div className="bg-neutral-50 p-2.5 rounded-xl border border-neutral-100">
-                          <span className="text-[10px] text-neutral-400 font-bold block uppercase">گاہک کا نام و رابطہ</span>
-                          <span className="font-bold text-black text-sm block mt-0.5">{ord.customerName}</span>
-                          <span className="font-mono text-neutral-700 block mt-0.5 flex items-center gap-1">
-                            <Phone className="w-3 h-3 text-neutral-400" /> {ord.phone}
+                          <span className="text-[10px] text-neutral-400 font-bold block uppercase">
+                            گاہک کا نام و رابطہ
                           </span>
+                          <span className="font-bold text-black text-sm block mt-0.5">
+                            {ord.customerName}
+                          </span>
+                          <a
+                            href={`tel:${ord.phone}`}
+                            className="font-mono text-neutral-800 hover:text-black font-semibold block mt-0.5 flex items-center gap-1"
+                          >
+                            <Phone className="w-3 h-3 text-neutral-400" /> {ord.phone}
+                          </a>
                           {ord.email && ord.email !== 'N/A' && (
                             <span className="text-neutral-600 block mt-0.5 flex items-center gap-1 truncate">
                               <Mail className="w-3 h-3 text-neutral-400 shrink-0" /> {ord.email}
@@ -1089,7 +1222,9 @@ export default function App() {
                         </div>
 
                         <div className="bg-neutral-50 p-2.5 rounded-xl border border-neutral-100 sm:col-span-2">
-                          <span className="text-[10px] text-neutral-400 font-bold block uppercase">ڈیلیوری کا پتہ (لاہور)</span>
+                          <span className="text-[10px] text-neutral-400 font-bold block uppercase">
+                            ڈیلیوری کا پتہ (لاہور)
+                          </span>
                           <span className="font-medium text-neutral-900 block mt-0.5 flex items-start gap-1">
                             <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />
                             <span>{ord.address}</span>
@@ -1111,15 +1246,25 @@ export default function App() {
                           {ord.items.map((it, idx) => (
                             <div key={idx} className="flex items-center justify-between text-xs">
                               <span className="font-medium text-neutral-800">
-                                {it.name} <span className="bg-neutral-200 px-1.5 py-0.2 rounded text-[10px] font-bold ml-1">{it.weight}</span> x {it.quantity}
+                                {it.name}{' '}
+                                <span className="bg-neutral-200 px-1.5 py-0.2 rounded text-[10px] font-bold ml-1">
+                                  {it.weight}
+                                </span>{' '}
+                                × {it.quantity}
                               </span>
-                              <span className="font-mono font-bold text-black">Rs {it.itemTotal}</span>
+                              <span className="font-mono font-bold text-black">
+                                Rs {it.itemTotal}
+                              </span>
                             </div>
                           ))}
                         </div>
                         <div className="mt-2 pt-2 border-t border-neutral-200 flex items-center justify-between text-xs font-bold text-black">
                           <span>
-                            کل رقم (COD Total) {ord.deliveryFee === 0 ? '(Free Delivery)' : `(+ Rs ${ord.deliveryFee} Del)`}:
+                            کل رقم (COD Total){' '}
+                            {ord.deliveryFee === 0
+                              ? '(Free Delivery)'
+                              : `(+ Rs ${ord.deliveryFee} Del)`}
+                            :
                           </span>
                           <span className="text-sm font-black text-emerald-700">Rs {ord.total}</span>
                         </div>
@@ -2758,68 +2903,140 @@ export default function App() {
       )}
 
       {/* ======================================================== */}
-      {/* MODAL: ORDER CONFIRMATION RECEIPT */}
+      {/* MODAL: ORDER CONFIRMATION RECEIPT (100% WEB NATIVE - NO WHATSAPP) */}
       {/* ======================================================== */}
       {orderSuccessRecord && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 text-center shadow-2xl border border-neutral-200 animate-scale-up">
-            <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-3">
-              <CheckCircle2 className="w-8 h-8" />
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div
+            id="printable-order-receipt"
+            className="bg-white rounded-3xl max-w-lg w-full p-6 text-left shadow-2xl border border-neutral-200 my-6 animate-scale-up"
+          >
+            {/* Header with Success Icon & Order ID */}
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-extrabold text-black">
+                    Order Placed Successfully!
+                  </h3>
+                  <span className="text-[11px] text-emerald-700 font-semibold block">
+                    ✓ آرڈر ویب سائٹ سسٹم میں موصول ہو چکا ہے
+                  </span>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <span className="text-[10px] text-neutral-400 uppercase font-bold block">Order ID</span>
+                <span className="text-xs sm:text-sm font-mono font-black bg-neutral-100 px-2.5 py-0.5 rounded-md text-black">
+                  {orderSuccessRecord.id}
+                </span>
+              </div>
             </div>
 
-            <h3 className="text-lg font-extrabold text-black">
-              Order Confirmed Successfully!
-            </h3>
-            <p className="text-xs text-neutral-600 mt-1">
-              Thank you for ordering with TASTE HEVEN Lahore.
-            </p>
-
-            <div className="my-4 bg-neutral-50 p-3.5 rounded-2xl border border-neutral-200 text-left text-xs space-y-1.5">
-              <div className="flex justify-between">
-                <span className="text-neutral-500 font-semibold">Order ID:</span>
-                <span className="font-mono font-black text-black">{orderSuccessRecord.id}</span>
+            {/* Direct Web System Notice */}
+            <div className="my-3 p-3 bg-emerald-50/80 border border-emerald-200 rounded-2xl text-xs text-emerald-950">
+              <div className="flex items-center gap-1.5 font-bold mb-0.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>ویب سسٹم آرڈر تصدیق (Web Order Confirmed)</span>
               </div>
+              <p className="text-[11px] text-emerald-800 leading-relaxed">
+                آپ کا آرڈر براہ راست ہمارے ایڈمن پورٹل میں موصول ہو چکا ہے۔ اسے واٹس ایپ پر بھیجنے کی کوئی ضرورت نہیں ہے۔ ہماری ٹیم پارسل تیار کر کے کیش آن ڈیلیوری روانہ کرے گی۔
+              </p>
+            </div>
+
+            {/* Customer & Delivery Information */}
+            <div className="bg-neutral-50 p-3.5 rounded-2xl border border-neutral-200 text-xs space-y-1.5 mb-3">
               <div className="flex justify-between">
-                <span className="text-neutral-500 font-semibold">Customer Name:</span>
+                <span className="text-neutral-500 font-semibold">Customer:</span>
                 <span className="font-bold text-black">{orderSuccessRecord.customerName}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-neutral-500 font-semibold">Phone:</span>
                 <span className="font-mono font-bold text-black">{orderSuccessRecord.phone}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-neutral-500 font-semibold">Address:</span>
-                <span className="text-neutral-800 text-right truncate max-w-[180px]">
+              {orderSuccessRecord.email && orderSuccessRecord.email !== 'N/A' && (
+                <div className="flex justify-between">
+                  <span className="text-neutral-500 font-semibold">Email:</span>
+                  <span className="text-neutral-700">{orderSuccessRecord.email}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-start gap-2">
+                <span className="text-neutral-500 font-semibold shrink-0">Delivery Address:</span>
+                <span className="text-neutral-900 font-medium text-right">
                   {orderSuccessRecord.address}
                 </span>
               </div>
-              <div className="pt-2 border-t border-neutral-200 flex justify-between font-bold">
-                <span>Total Payable (COD):</span>
-                <span className="font-mono text-emerald-700 text-sm">
-                  Rs {orderSuccessRecord.total}
-                </span>
+              {orderSuccessRecord.landmark && (
+                <div className="flex justify-between">
+                  <span className="text-neutral-500 font-semibold">Landmark:</span>
+                  <span className="text-neutral-700 text-right">{orderSuccessRecord.landmark}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-neutral-500 font-semibold">Date & Time:</span>
+                <span className="text-neutral-700 font-mono text-[11px]">{orderSuccessRecord.createdAt}</span>
               </div>
             </div>
 
-            {/* WhatsApp Direct Order Sync */}
+            {/* Ordered Items Breakdown */}
+            <div className="border border-neutral-200 rounded-2xl p-3.5 mb-4 bg-white">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block mb-2">
+                Ordered Items (تفصیل اشیاء)
+              </span>
+              <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+                {orderSuccessRecord.items.map((it, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-xs">
+                    <span className="text-neutral-800">
+                      <strong className="font-semibold">{it.name}</strong>{' '}
+                      <span className="bg-neutral-100 text-neutral-700 px-1.5 py-0.5 rounded text-[10px] font-bold ml-1">
+                        {it.weight}
+                      </span>{' '}
+                      × {it.quantity}
+                    </span>
+                    <span className="font-mono font-bold text-black">Rs {it.itemTotal}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-3 pt-2.5 border-t border-neutral-100 space-y-1 text-xs">
+                <div className="flex justify-between text-neutral-600">
+                  <span>Subtotal:</span>
+                  <span className="font-mono font-semibold">Rs {orderSuccessRecord.subtotal}</span>
+                </div>
+                <div className="flex justify-between text-neutral-600">
+                  <span>Delivery Charges (Lahore):</span>
+                  <span className="font-mono font-semibold">
+                    {orderSuccessRecord.deliveryFee === 0 ? 'FREE' : `Rs ${orderSuccessRecord.deliveryFee}`}
+                  </span>
+                </div>
+                <div className="pt-2 border-t border-neutral-200 flex justify-between font-black text-black text-sm">
+                  <span>Total Payable (Cash on Delivery):</span>
+                  <span className="font-mono text-emerald-700 text-base">
+                    Rs {orderSuccessRecord.total}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Web-Only Actions (No WhatsApp) */}
             <div className="space-y-2">
-              <a
-                href={`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(
-                  generateWhatsAppOrderText(orderSuccessRecord)
-                )}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full inline-flex items-center justify-center gap-2 py-3 bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-bold rounded-full shadow-md transition-all"
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="w-full inline-flex items-center justify-center gap-2 py-3 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-full shadow-md transition-all cursor-pointer"
               >
-                <MessageCircle className="w-4 h-4 fill-white" />
-                <span>Send Order Receipt to WhatsApp</span>
-              </a>
+                <Printer className="w-4 h-4" />
+                <span>Print / Save Receipt (رسید پرنٹ یا محفوظ کریں)</span>
+              </button>
 
               <button
+                type="button"
                 onClick={() => setOrderSuccessRecord(null)}
                 className="w-full py-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-semibold rounded-full cursor-pointer transition-colors"
               >
-                Continue Shopping
+                Close & Continue Shopping (خریداری جاری رکھیں)
               </button>
             </div>
           </div>
